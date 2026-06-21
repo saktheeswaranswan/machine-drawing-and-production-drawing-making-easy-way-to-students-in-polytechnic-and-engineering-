@@ -1,0 +1,1334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Mechanical Drawing</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #2c2c2c;
+            font-family: sans-serif;
+        }
+        canvas {
+            background-color: #ffffff;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            cursor: crosshair;
+        }
+    </style>
+</head>
+<body>
+
+<canvas id="mechanicCanvas" width="950" height="900"></canvas>
+
+<script>
+// =========================================================
+// CANVAS & CONTEXT SETUP
+// =========================================================
+const canvas = document.getElementById('mechanicCanvas');
+const ctx = canvas.getContext('2d');
+const width = canvas.width;
+const height = canvas.height;
+
+// =========================================================
+// STATE MACHINE VARIABLES
+// =========================================================
+const VISUAL_SCALE = 2.5;
+let step = 0;
+let isWaitingForInput = false;
+let currentInput = "";
+
+let userVals = new Array(42).fill(0);
+let needsInput = new Array(42).fill(false);
+let prompts = new Array(42).fill("");
+
+let mouseX = 0;
+let mouseY = 0;
+let frameCount = 0;
+
+// =========================================================
+// PROCESSING TO JS API EMULATORS
+// =========================================================
+const PI = Math.PI;
+const HALF_PI = Math.PI / 2;
+const TWO_PI = Math.PI * 2;
+
+let doFill = true;
+let doStroke = true;
+let currentRectMode = 'CORNER';
+
+function int(v) { return Math.floor(v); }
+function abs(v) { return Math.abs(v); }
+function sqrt(v) { return Math.sqrt(v); }
+function min(a, b) { return Math.min(a, b); }
+function max(a, b) { return Math.max(a, b); }
+function dist(x1, y1, x2, y2) { return Math.hypot(x2 - x1, y2 - y1); }
+function radians(deg) { return deg * PI / 180; }
+function float(str) { return parseFloat(str); }
+
+function parseColorArgs(args) {
+    if (args.length === 1) return `rgba(${args[0]}, ${args[0]}, ${args[0]}, 1)`;
+    if (args.length === 2) return `rgba(${args[0]}, ${args[0]}, ${args[0]}, ${args[1] / 255})`;
+    if (args.length === 3) return `rgba(${args[0]}, ${args[1]}, ${args[2]}, 1)`;
+    if (args.length === 4) return `rgba(${args[0]}, ${args[1]}, ${args[2]}, ${args[3] / 255})`;
+    return 'rgba(0,0,0,1)';
+}
+
+function background(...args) {
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.fillStyle = parseColorArgs(args);
+    ctx.fillRect(0, 0, width, height);
+    ctx.restore();
+}
+
+function fill(...args) {
+    doFill = true;
+    ctx.fillStyle = parseColorArgs(args);
+}
+
+function noFill() { doFill = false; }
+
+function stroke(...args) {
+    doStroke = true;
+    ctx.strokeStyle = parseColorArgs(args);
+}
+
+function noStroke() { doStroke = false; }
+
+function strokeWeight(w) { ctx.lineWidth = w; }
+
+function rectMode(mode) { currentRectMode = mode; }
+
+function rect(x, y, w, h, r = 0) {
+    let rx = x, ry = y;
+    if (currentRectMode === 'CENTER') {
+        rx = x - w / 2;
+        ry = y - h / 2;
+    }
+    ctx.beginPath();
+    if (r > 0) {
+        ctx.roundRect(rx, ry, w, h, r);
+    } else {
+        ctx.rect(rx, ry, w, h);
+    }
+    if (doFill) ctx.fill();
+    if (doStroke) ctx.stroke();
+}
+
+function ellipse(x, y, w, h) {
+    ctx.beginPath();
+    ctx.ellipse(x, y, w / 2, h / 2, 0, 0, TWO_PI);
+    if (doFill) ctx.fill();
+    if (doStroke) ctx.stroke();
+}
+
+function arc(x, y, w, h, start, stop) {
+    ctx.beginPath();
+    ctx.ellipse(x, y, w / 2, h / 2, 0, start, stop);
+    if (doFill) ctx.fill();
+    if (doStroke) ctx.stroke();
+}
+
+function line(x1, y1, x2, y2) {
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    if (doStroke) ctx.stroke();
+}
+
+function triangle(x1, y1, x2, y2, x3, y3) {
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.lineTo(x3, y3);
+    ctx.closePath();
+    if (doFill) ctx.fill();
+    if (doStroke) ctx.stroke();
+}
+
+function textSize(s) { ctx.font = `${s}px sans-serif`; }
+
+function textAlign(align, baseline = 'MIDDLE') {
+    ctx.textAlign = align === 'CENTER' ? 'center' : (align === 'RIGHT' ? 'right' : 'left');
+    ctx.textBaseline = baseline === 'CENTER' ? 'middle' : (baseline === 'BOTTOM' ? 'bottom' : 'top');
+}
+
+function text(str, x, y) {
+    if (doFill) ctx.fillText(str, x, y);
+}
+
+function pushMatrix() { ctx.save(); }
+function popMatrix() { ctx.restore(); }
+function translate(x, y) { ctx.translate(x, y); }
+function rotate(angle) { ctx.rotate(angle); }
+
+function clip(x, y, w, h) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(x, y, w, h);
+    ctx.clip();
+}
+function noClip() { ctx.restore(); }
+
+// =========================================================
+// INIT & EVENT LISTENERS
+// =========================================================
+function setup() {
+    for (let i = 0; i < 42; i++) {
+        needsInput[i] = false;
+        prompts[i] = "";
+    }
+
+    userVals[0] = 168; needsInput[0] = true; prompts[0] = "Step 1: Enter Base Line Width (Default 168)";
+    userVals[3] = 14;  needsInput[3] = true; prompts[3] = "Step 4: Enter Side Wall Height (Default 14)";
+    userVals[4] = 4;   needsInput[4] = true; prompts[4] = "Step 5: Enter Inward Ledge Width (Default 4)";
+    userVals[6] = 43;  needsInput[6] = true; prompts[6] = "Step 7: Enter Top Line Offset (Default 43)";
+    userVals[7] = 30;  needsInput[7] = true; prompts[7] = "Step 8: Enter First Upward Vertical (Default 30)";
+    userVals[8] = 25;  needsInput[8] = true; prompts[8] = "Step 9: Enter Second Upward Vertical (Default 25)";
+    userVals[11] = 22; needsInput[11] = true; prompts[11] = "Step 12: Enter Inner Rect Offset (Default 22)";
+    userVals[12] = 12; needsInput[12] = true; prompts[12] = "Step 13: Enter Inner Rect Depth (Default 12)";
+    userVals[14] = 3;  needsInput[14] = true; prompts[14] = "Step 15: Enter Gap Below Rect (Default 3)";
+    userVals[15] = 19; needsInput[15] = true; prompts[15] = "Step 16: Enter Semicircle Radius (Default 19)";
+    userVals[16] = 36; needsInput[16] = true; prompts[16] = "Step 17: Enter Top View Depth (Default 36)";
+    userVals[18] = 64; needsInput[18] = true; prompts[18] = "Step 19: Enter Slot Offset (Default 64)";
+    userVals[19] = 5;  needsInput[19] = true; prompts[19] = "Step 20: Enter Small Slot Radius (Default 5)";
+    userVals[20] = 2;  needsInput[20] = true; prompts[20] = "Step 21: Enter Corner Rect Height (Default 2)";
+    userVals[23] = 31; needsInput[23] = true; prompts[23] = "Step 24: Enter Projection Offset (Default 31)";
+    userVals[29] = 36; needsInput[29] = true; prompts[29] = "Step 30: Enter Large Outer Radius (Default 36)";
+
+    userVals[21] = 8;
+    userVals[24] = 20;
+    userVals[25] = 6;
+
+    if (needsInput[0]) isWaitingForInput = true;
+    
+    requestAnimationFrame(drawLoop);
+}
+
+canvas.addEventListener('mousemove', (e) => {
+    const rectObj = canvas.getBoundingClientRect();
+    mouseX = e.clientX - rectObj.left;
+    mouseY = e.clientY - rectObj.top;
+});
+
+canvas.addEventListener('mousedown', (e) => {
+    mousePressed();
+});
+
+// =========================================================
+// MAIN LOOP & INPUT LOGIC
+// =========================================================
+function drawLoop() {
+    frameCount++;
+    background(255);
+    
+    drawMechanicalPart();
+    
+    if (isWaitingForInput) {
+        fill(255, 230);
+        rectMode('CORNER');
+        noStroke();
+        rect(0, 0, width, height);
+        drawKeypadUI();
+    }
+    requestAnimationFrame(drawLoop);
+}
+
+function mousePressed() {
+    if (isWaitingForInput) {
+        let btnW = 80, btnH = 60;
+        let startX = width / 2 - (btnW * 1.5) - 10;
+        let startY = height / 2 - 80;
+        
+        let keys = ["7", "8", "9", "4", "5", "6", "1", "2", "3", "0", ".", "DEL"];
+        for (let i = 0; i < 12; i++) {
+            let row = int(i / 3), col = i % 3;
+            let bx = startX + col * (btnW + 10);
+            let by = startY + row * (btnH + 10);
+            
+            if (mouseX > bx && mouseX < bx + btnW && mouseY > by && mouseY < by + btnH) {
+                if (keys[i] === "DEL") {
+                    if (currentInput.length > 0) currentInput = currentInput.substring(0, currentInput.length - 1);
+                } else {
+                    if (keys[i] === "." && currentInput.includes(".")) return;
+                    currentInput += keys[i];
+                }
+            }
+        }
+        
+        let enterY = startY + 4 * (btnH + 10);
+        let enterW = (btnW * 3) + 20;
+        if (mouseX > startX && mouseX < startX + enterW && mouseY > enterY && mouseY < enterY + btnH) {
+            if (currentInput.length > 0) userVals[step] = float(currentInput);
+            isWaitingForInput = false; 
+            currentInput = "";
+        }
+    } else {
+        step++;
+        if (step > 40) step = 0;
+        if (needsInput[step]) {
+            isWaitingForInput = true;
+            currentInput = ""; 
+        }
+    }
+}
+
+// =========================================================
+// DYNAMIC TEXT FORMATTER HELPERS
+// =========================================================
+function fmt(v) {
+    return (v === int(v) ? int(v) : v.toString()) + " mm";
+}
+function fmtR(v) {
+    return (v === int(v) ? int(v) : v.toString()) + " mm R";
+}
+
+// =========================================================
+// CALCULATOR KEYPAD UI FOR DIMENSION INPUT
+// =========================================================
+function drawKeypadUI() {
+    textAlign('CENTER', 'CENTER');
+    
+    fill(0); textSize(24);
+    text(prompts[step], width / 2, height / 2 - 250);
+    textSize(16);
+    text("(Type value and press ENTER. Leave blank to use default)", width / 2, height / 2 - 220);
+    
+    stroke(0); strokeWeight(2); fill(240); rectMode('CENTER');
+    rect(width / 2, height / 2 - 150, 300, 50, 5);
+    
+    fill(0); textSize(28);
+    text(currentInput + (frameCount % 60 < 30 ? "|" : ""), width / 2, height / 2 - 150);
+    
+    rectMode('CORNER');
+    let btnW = 80, btnH = 60;
+    let startX = width / 2 - (btnW * 1.5) - 10;
+    let startY = height / 2 - 80;
+    
+    let keys = ["7", "8", "9", "4", "5", "6", "1", "2", "3", "0", ".", "DEL"];
+    
+    textSize(24);
+    for (let i = 0; i < 12; i++) {
+        let row = int(i / 3), col = i % 3;
+        let bx = startX + col * (btnW + 10);
+        let by = startY + row * (btnH + 10);
+        
+        if (mouseX > bx && mouseX < bx + btnW && mouseY > by && mouseY < by + btnH) {
+            fill(200);
+        } else {
+            fill(255);
+        }
+        
+        stroke(0); strokeWeight(2);
+        rect(bx, by, btnW, btnH, 5);
+        
+        fill(0);
+        text(keys[i], bx + btnW / 2, by + btnH / 2);
+    }
+    
+    let enterY = startY + 4 * (btnH + 10);
+    let enterW = (btnW * 3) + 20;
+    if (mouseX > startX && mouseX < startX + enterW && mouseY > enterY && mouseY < enterY + btnH) {
+        fill(100, 255, 100);
+    } else {
+        fill(150, 255, 150);
+    }
+    rect(startX, enterY, enterW, btnH, 5);
+    fill(0);
+    text("ENTER", startX + enterW / 2, enterY + btnH / 2);
+    
+    textAlign('LEFT', 'CENTER'); 
+}
+
+// =========================================================
+// MAIN DRAWING LOGIC (ALL 41 STEPS)
+// =========================================================
+function drawMechanicalPart() {
+    let centerX = width / 2;
+    let baseY   = 480; 
+
+    let baseW   = userVals[0] * VISUAL_SCALE;
+    let sideH   = userVals[3] * VISUAL_SCALE;
+    let ledgeW  = userVals[4] * VISUAL_SCALE;
+    let topY = baseY - sideH;
+
+    let halfPurple = userVals[6] * VISUAL_SCALE;
+    let upHeight1  = userVals[7] * VISUAL_SCALE;
+    let upHeight2  = userVals[8] * VISUAL_SCALE;
+    let leftPurpleX  = centerX - halfPurple;
+    let rightPurpleX = centerX + halfPurple;
+    let firstTopY    = topY - upHeight1;
+    let finalTopY    = firstTopY - upHeight2;
+
+    let innerHalfW   = userVals[11] * VISUAL_SCALE;
+    let innerH       = userVals[12] * VISUAL_SCALE;
+    let innerLeftX   = centerX - innerHalfW;
+    let innerRightX  = centerX + innerHalfW;
+    let innerBottomY = finalTopY + innerH;
+
+    let gapBelowRect = userVals[14] * VISUAL_SCALE;
+    let dottedY      = innerBottomY + gapBelowRect;
+
+    let slotR      = userVals[15] * VISUAL_SCALE;
+    let slotHalfW  = slotR;
+    let dropH      = 3 * VISUAL_SCALE;
+    let arcLeftX   = centerX - slotHalfW;
+    let arcRightX  = centerX + slotHalfW;
+    let arcTopY    = innerBottomY + dropH;
+    let arcBottomY = arcTopY + slotR;
+
+    let bigR36 = userVals[29] * VISUAL_SCALE;
+
+    let orangeGap    = 8 * VISUAL_SCALE;
+    let orangeH      = userVals[20] * VISUAL_SCALE;
+    let orangeLeftX  = centerX - baseW/2 + orangeGap;
+    let orangeRightX = centerX + baseW/2 - orangeGap;
+    let orangeTopY   = baseY - orangeH;
+
+    let topViewGap      = 20 * VISUAL_SCALE;
+    let topViewW        = baseW;
+    let topViewH        = userVals[16] * VISUAL_SCALE;
+
+    let topViewTopY     = baseY + topViewGap;
+    let topViewBottomY  = topViewTopY + topViewH;
+    let topViewLeftX    = centerX - topViewW / 2;
+    let topViewRightX   = centerX + topViewW / 2;
+    let topViewCenterY  = topViewTopY + topViewH / 2;
+
+    stroke(0); strokeWeight(2); textAlign('LEFT', 'CENTER'); 
+
+    // STEP 1
+    if (step >= 0) {
+        line(centerX - baseW/2, baseY, centerX + baseW/2, baseY);
+        if (step === 0) {
+            drawDimension(centerX - baseW/2, baseY + 45, centerX + baseW/2, baseY + 45, fmt(userVals[0]), true);
+            fill(0); textSize(16);
+            text("Step 1: Draw " + fmt(userVals[0]) + " base line", 50, 40);
+        }
+    }
+
+    // STEP 2
+    if (step >= 1) {
+        fill(255, 0, 0); noStroke();
+        ellipse(centerX, baseY, 10, 10);
+        if (step === 1) { fill(0); text("Step 2: Mark centre point on base line", 50, 40); }
+    }
+
+    // STEP 3
+    if (step >= 2) {
+        stroke(0); strokeWeight(1);
+        for (let y = 100; y < baseY + 20; y += 18) {
+            line(centerX, y, centerX, y + 9);
+        }
+        if (step === 2) { fill(0); text("Step 3: Draw vertical centre line", 50, 40); }
+    }
+
+    // STEP 4
+    if (step >= 3) {
+        stroke(0); strokeWeight(2);
+        line(centerX - baseW/2, baseY, centerX - baseW/2, topY);
+        line(centerX + baseW/2, baseY, centerX + baseW/2, topY);
+        if (step === 3) {
+            drawDimension(centerX - baseW/2 - 25, baseY, centerX - baseW/2 - 25, topY, fmt(userVals[3]), false);
+            fill(0); text("Step 4: Draw " + fmt(userVals[3]) + " vertical side walls", 50, 40);
+        }
+    }
+
+    // STEP 5
+    if (step >= 4) {
+        stroke(0); strokeWeight(2);
+        line(centerX - baseW/2, topY, centerX - baseW/2 + ledgeW, topY);
+        line(centerX + baseW/2, topY, centerX + baseW/2 - ledgeW, topY);
+        if (step === 4) {
+            drawDimension(centerX - baseW/2, topY - 25, centerX - baseW/2 + ledgeW, topY - 25, fmt(userVals[4]), true);
+            fill(0); text("Step 5: Draw " + fmt(userVals[4]) + " inward ledges", 50, 40);
+        }
+    }
+
+    // STEP 6
+    if (step >= 5) {
+        stroke(0); strokeWeight(1);
+        line(centerX - baseW/2, baseY, centerX - baseW/2 + ledgeW, topY);
+        line(centerX + baseW/2, baseY, centerX + baseW/2 - ledgeW, topY);
+
+        stroke(0, 0, 255); strokeWeight(3);
+        line(centerX - baseW/2 + ledgeW, topY, centerX + baseW/2 - ledgeW, topY);
+
+        if (step === 5 || step === 6) {
+            if (step === 5) {
+                stroke(0); strokeWeight(1);
+                drawDimension(centerX - baseW/2, baseY + 45, centerX + baseW/2, baseY + 45, fmt(userVals[0]), true);
+                drawDimension(centerX - baseW/2 - 25, baseY, centerX - baseW/2 - 25, topY, fmt(userVals[3]), false);
+                drawDimension(centerX - baseW/2, topY - 25, centerX - baseW/2 + ledgeW, topY - 25, fmt(userVals[4]), true);
+                fill(0); text("Step 6: Draw base profile and blue top line", 50, 40);
+            }
+        }
+    }
+
+    // STEP 7
+    if (step >= 6) {
+        fill(150, 0, 200); noStroke();
+        ellipse(leftPurpleX, topY, 8, 8);
+        ellipse(rightPurpleX, topY, 8, 8);
+
+        stroke(0); strokeWeight(1);
+        if (step === 6) {
+            drawDimension(centerX, topY - 45, leftPurpleX, topY - 45, fmt(userVals[6]), true);
+            drawDimension(centerX, topY - 75, rightPurpleX, topY - 75, fmt(userVals[6]), true);
+            fill(0); text("Step 7: Mark " + fmt(userVals[6]) + " left and right on blue line", 50, 40);
+        }
+    }
+
+    // STEP 8
+    if (step >= 7) {
+        stroke(150, 0, 200); strokeWeight(3);
+        line(leftPurpleX, topY, leftPurpleX, firstTopY);
+        line(rightPurpleX, topY, rightPurpleX, firstTopY);
+
+        fill(150, 0, 200); noStroke();
+        ellipse(leftPurpleX, firstTopY, 8, 8);
+        ellipse(rightPurpleX, firstTopY, 8, 8);
+
+        if (step === 7) {
+            stroke(0); strokeWeight(1);
+            drawDimension(rightPurpleX + 25, topY, rightPurpleX + 25, firstTopY, fmt(userVals[7]), false);
+            fill(0); text("Step 8: Draw " + fmt(userVals[7]) + " verticals upward", 50, 40);
+        }
+    }
+
+    // STEP 9
+    if (step >= 8) {
+        stroke(180, 0, 255); strokeWeight(3);
+        line(leftPurpleX, firstTopY, leftPurpleX, finalTopY);
+        line(rightPurpleX, firstTopY, rightPurpleX, finalTopY);
+
+        fill(180, 0, 255); noStroke();
+        ellipse(leftPurpleX, finalTopY, 8, 8);
+        ellipse(rightPurpleX, finalTopY, 8, 8);
+
+        if (step === 8) {
+            stroke(0); strokeWeight(1);
+            drawDimension(rightPurpleX + 45, firstTopY, rightPurpleX + 45, finalTopY, fmt(userVals[8]), false);
+            fill(0); text("Step 9: Extend both side verticals upward by " + fmt(userVals[8]), 50, 40);
+        }
+    }
+
+    // STEP 10
+    if (step >= 9) {
+        stroke(180, 0, 255); strokeWeight(4);
+        line(leftPurpleX, finalTopY, rightPurpleX, finalTopY);
+        if (step === 9) { fill(0); text("Step 10: Draw straight horizontal top line", 50, 40); }
+    }
+
+    // STEP 11
+    if (step >= 10) {
+        stroke(180, 0, 255); strokeWeight(2);
+        line(centerX, baseY, centerX, finalTopY);
+
+        fill(180, 0, 255); noStroke();
+        ellipse(centerX, finalTopY, 8, 8);
+
+        if (step === 10) {
+            stroke(0); strokeWeight(1);
+            let totalHeight = userVals[7] + userVals[8];
+            drawDimension(rightPurpleX + 70, topY, rightPurpleX + 70, finalTopY, fmt(totalHeight), false);
+            fill(0); text("Step 11: Final purple box with total side height = " + fmt(totalHeight), 50, 40);
+        }
+    }
+
+    // STEP 12
+    if (step >= 11) {
+        stroke(0, 150, 0); strokeWeight(2);
+        line(centerX, finalTopY - 8, centerX, finalTopY + 8);
+
+        fill(0, 150, 0); noStroke();
+        ellipse(innerLeftX, finalTopY, 8, 8);
+        ellipse(innerRightX, finalTopY, 8, 8);
+
+        if (step === 11) {
+            stroke(0); strokeWeight(1);
+            drawDimension(centerX, finalTopY - 40, innerLeftX, finalTopY - 40, fmt(userVals[11]), true);
+            drawDimension(centerX, finalTopY - 70, innerRightX, finalTopY - 70, fmt(userVals[11]), true);
+            fill(0); text("Step 12: Mark " + fmt(userVals[11]) + " left and right from top centre of purple box", 50, 40);
+        }
+    }
+
+    // STEP 13
+    if (step >= 12) {
+        stroke(0, 150, 0); strokeWeight(3);
+        line(innerLeftX, finalTopY, innerLeftX, innerBottomY);
+        line(innerRightX, finalTopY, innerRightX, innerBottomY);
+
+        fill(0, 150, 0); noStroke();
+        ellipse(innerLeftX, innerBottomY, 8, 8);
+        ellipse(innerRightX, innerBottomY, 8, 8);
+
+        if (step === 12) {
+            stroke(0); strokeWeight(1);
+            drawDimension(innerRightX + 30, finalTopY, innerRightX + 30, innerBottomY, fmt(userVals[12]), false);
+            fill(0); text("Step 13: Draw " + fmt(userVals[12]) + " downward verticals inside purple box", 50, 40);
+        }
+    }
+
+    // STEP 14
+    if (step >= 13) {
+        stroke(0, 150, 0); strokeWeight(3);
+        line(innerLeftX, finalTopY, innerRightX, finalTopY);
+        line(innerLeftX, innerBottomY, innerRightX, innerBottomY);
+
+        if (step === 13) {
+            stroke(0); strokeWeight(1);
+            drawDimension(innerLeftX, innerBottomY + 35, innerRightX, innerBottomY + 35, fmt(userVals[11]*2), true);
+            fill(0); text("Step 14: Draw " + fmt(userVals[11]*2) + " × " + fmt(userVals[12]) + " inner rectangle", 50, 40);
+        }
+    }
+
+    // STEP 15
+    if (step >= 14) {
+        stroke(0, 120, 0); strokeWeight(2);
+        for (let x = innerLeftX; x < innerRightX; x += 12) {
+            line(x, dottedY, min(x + 6, innerRightX), dottedY);
+        }
+        if (step === 14) {
+            stroke(0); strokeWeight(1);
+            drawDimension(innerRightX + 30, innerBottomY, innerRightX + 30, dottedY, fmt(userVals[14]), false);
+            fill(0); text("Step 15: Draw dotted line " + fmt(userVals[14]) + " below rectangle", 50, 40);
+        }
+    }
+
+    // STEP 16
+    if (step >= 15) {
+        stroke(255); strokeWeight(5);
+        line(innerLeftX, innerBottomY, innerRightX, innerBottomY);
+
+        stroke(0, 150, 0); strokeWeight(3);
+        line(innerLeftX, finalTopY, innerLeftX, innerBottomY);
+        line(innerRightX, finalTopY, innerRightX, innerBottomY);
+        line(innerLeftX, finalTopY, innerRightX, finalTopY);
+
+        line(innerLeftX, innerBottomY, arcLeftX, innerBottomY);
+        line(arcRightX, innerBottomY, innerRightX, innerBottomY);
+
+        line(arcLeftX, innerBottomY, arcLeftX, arcTopY);
+        line(arcRightX, innerBottomY, arcRightX, arcTopY);
+
+        stroke(0, 120, 0); strokeWeight(3); noFill();
+        arc(centerX, arcTopY, 2 * slotR, 2 * slotR, 0, PI);
+
+        if (step === 15) {
+            stroke(0); strokeWeight(1);
+            drawDimension(arcRightX + 35, arcTopY, arcRightX + 35, arcBottomY, fmt(userVals[15]), false);
+            fill(0); text("Step 16: Trim rectangle bottom, draw side drops and semicircle R" + int(userVals[15]), 50, 40);
+        }
+    }
+
+    // STEP 17
+    if (step >= 16) {
+        stroke(0); strokeWeight(1);
+        line(centerX - baseW/2, baseY, centerX - baseW/2, topViewTopY);
+        line(centerX + baseW/2, baseY, centerX + baseW/2, topViewTopY);
+
+        for (let y = baseY + 8; y < topViewBottomY; y += 18) {
+            line(centerX, y, centerX, min(y + 9, topViewBottomY));
+        }
+
+        stroke(0); strokeWeight(2); fill(255); rectMode('CORNER');
+        rect(topViewLeftX, topViewTopY, topViewW, topViewH);
+
+        if (step === 16) {
+            stroke(0); strokeWeight(1);
+            drawDimension(topViewLeftX, topViewBottomY + 35, topViewRightX, topViewBottomY + 35, fmt(userVals[0]), true);
+            drawDimension(topViewRightX + 35, topViewTopY, topViewRightX + 35, topViewBottomY, fmt(userVals[16]), false);
+            drawDimension(topViewLeftX - 35, baseY, topViewLeftX - 35, topViewTopY, "20 mm", false);
+            fill(0); text("Step 17: Project centre line down and draw top view rectangle " + fmt(userVals[0]) + " × " + fmt(userVals[16]), 50, 40);
+        }
+    }
+
+    // STEP 18
+    if (step >= 17) {
+        stroke(0); strokeWeight(1);
+        for (let x = topViewLeftX + 5; x < topViewRightX; x += 18) {
+            line(x, topViewCenterY, min(x + 9, topViewRightX), topViewCenterY);
+        }
+
+        clip(int(topViewLeftX), int(topViewTopY), int(topViewW), int(topViewH));
+        stroke(150); strokeWeight(2); noFill();
+
+        let arcRadius = userVals[6] * VISUAL_SCALE;
+        ellipse(centerX, topViewCenterY, arcRadius * 2, arcRadius * 2);
+        noClip();
+
+        if (step === 17) {
+            stroke(0); strokeWeight(1);
+            drawDimension(centerX, topViewCenterY - 12, centerX + arcRadius, topViewCenterY - 12, fmt(userVals[6]), true);
+            fill(0); text("Step 18: Draw horizontal centre dotted line and " + fmt(userVals[6]) + " grey arcs", 50, 40);
+        }
+    }
+
+    // STEP 19
+    if (step >= 18) {
+        fill(255, 0, 0); noStroke();
+        ellipse(centerX, topViewCenterY, 8, 8);
+
+        let rectOffset = userVals[18] * VISUAL_SCALE;
+        let rectWTv      = 8 * VISUAL_SCALE;
+        let rectHTv      = 10 * VISUAL_SCALE;
+
+        stroke(0); strokeWeight(2); noFill();
+        rect(centerX - rectOffset - rectWTv/2, topViewCenterY - rectHTv/2, rectWTv, rectHTv);
+        rect(centerX + rectOffset - rectWTv/2, topViewCenterY - rectHTv/2, rectWTv, rectHTv);
+
+        if (step === 18) {
+            stroke(0); strokeWeight(1);
+            drawDimension(centerX, topViewCenterY + 30, centerX - rectOffset, topViewCenterY + 30, fmt(userVals[18]), true);
+            drawDimension(centerX, topViewCenterY + 30, centerX + rectOffset, topViewCenterY + 30, fmt(userVals[18]), true);
+            drawDimension(centerX - rectOffset - rectWTv/2, topViewCenterY - 20, centerX - rectOffset + rectWTv/2, topViewCenterY - 20, "8 mm", true);
+            drawDimension(centerX + rectOffset + rectWTv/2 + 10, topViewCenterY - rectHTv/2, centerX + rectOffset + rectWTv/2 + 10, topViewCenterY + rectHTv/2, "10 mm", false);
+            fill(0); text("Step 19: Draw center red dot and two 8x10 mm rectangles at " + fmt(userVals[18]) + " left and right", 50, 40);
+        }
+    }
+
+    // STEP 20
+    if (step >= 19) {
+        let rectOffset = userVals[18] * VISUAL_SCALE;
+        let rectWTv    = 8 * VISUAL_SCALE;
+        let r          = userVals[19] * VISUAL_SCALE;
+
+        let leftSlotCX  = centerX - rectOffset;
+        let rightSlotCX = centerX + rectOffset;
+
+        stroke(255); strokeWeight(4);
+        line(leftSlotCX - rectWTv/2, topViewCenterY - r + 1, leftSlotCX - rectWTv/2, topViewCenterY + r - 1);
+        line(leftSlotCX + rectWTv/2, topViewCenterY - r + 1, leftSlotCX + rectWTv/2, topViewCenterY + r - 1);
+        line(rightSlotCX - rectWTv/2, topViewCenterY - r + 1, rightSlotCX - rectWTv/2, topViewCenterY + r - 1);
+        line(rightSlotCX + rectWTv/2, topViewCenterY - r + 1, rightSlotCX + rectWTv/2, topViewCenterY + r - 1);
+
+        stroke(0); strokeWeight(2); noFill();
+        arc(leftSlotCX - rectWTv/2, topViewCenterY, 2*r, 2*r, HALF_PI, PI + HALF_PI);
+        arc(leftSlotCX + rectWTv/2, topViewCenterY, 2*r, 2*r, -HALF_PI, HALF_PI);
+        arc(rightSlotCX - rectWTv/2, topViewCenterY, 2*r, 2*r, HALF_PI, PI + HALF_PI);
+        arc(rightSlotCX + rectWTv/2, topViewCenterY, 2*r, 2*r, -HALF_PI, HALF_PI);
+
+        line(leftSlotCX - rectWTv/2, topViewCenterY - r, leftSlotCX + rectWTv/2, topViewCenterY - r);
+        line(leftSlotCX - rectWTv/2, topViewCenterY + r, leftSlotCX + rectWTv/2, topViewCenterY + r);
+        line(rightSlotCX - rectWTv/2, topViewCenterY - r, rightSlotCX + rectWTv/2, topViewCenterY - r);
+        line(rightSlotCX - rectWTv/2, topViewCenterY + r, rightSlotCX + rectWTv/2, topViewCenterY + r);
+
+        if (step === 19) {
+            stroke(0); strokeWeight(1);
+            drawDimension(rightSlotCX + rectWTv/2 + 3, topViewCenterY, rightSlotCX + rectWTv/2 + r + 20, topViewCenterY, "R" + int(userVals[19]), true);
+            fill(0); text("Step 20: Draw " + fmt(userVals[19]) + " radius semicircles on the sides to complete slotted holes", 50, 40);
+        }
+    }
+
+    // STEP 21
+    if (step >= 20) {
+        stroke(255, 128, 0); strokeWeight(2); noFill();
+        line(orangeLeftX, baseY, orangeLeftX, orangeTopY);
+        line(orangeRightX, baseY, orangeRightX, orangeTopY);
+        line(orangeLeftX, orangeTopY, orangeRightX, orangeTopY);
+
+        if (step === 20) {
+            stroke(0); strokeWeight(1);
+            drawDimension(centerX - baseW/2, baseY - 5, orangeLeftX, baseY - 5, "8 mm", true);
+            drawDimension(orangeRightX, baseY - 5, centerX + baseW/2, baseY - 5, "8 mm", true);
+            drawDimension(orangeRightX + 15, baseY, orangeRightX + 15, orangeTopY, fmt(userVals[20]), false);
+            fill(0); text("Step 21: Draw " + fmt(userVals[20]) + " high orange rectangle 8 mm inward from the base corners", 50, 40);
+        }
+    }
+
+    // STEP 22
+    if (step >= 21) {
+        let botOffset = 8 * VISUAL_SCALE;
+        let botW      = 2 * VISUAL_SCALE;
+        let botH      = 2 * VISUAL_SCALE;
+
+        stroke(0, 150, 150); strokeWeight(2); noFill();
+        rect(centerX - botOffset - botW, baseY, botW, botH);
+        rect(centerX + botOffset, baseY, botW, botH);
+
+        if (step === 21) {
+            stroke(0); strokeWeight(1);
+            drawDimension(centerX, baseY + 12, centerX + botOffset, baseY + 12, "8 mm", true);
+            drawDimension(centerX + botOffset, baseY + 24, centerX + botOffset + botW, baseY + 24, "2 mm", true);
+            fill(0); text("Step 22: Draw two 2 mm wide rectangles below the base line, starting 8 mm from the centre", 50, 40);
+        }
+    }
+
+    // STEP 23
+    if (step >= 22) {
+        let projOffset = userVals[18] * VISUAL_SCALE;
+        let slotFrontW = 20 * VISUAL_SCALE;
+        let slotFrontH = 14 * VISUAL_SCALE;
+
+        let leftSlotCX  = centerX - projOffset;
+        let rightSlotCX = centerX + projOffset;
+
+        stroke(120); strokeWeight(1);
+        drawDashedLine(leftSlotCX - slotFrontW/2, topViewCenterY, leftSlotCX - slotFrontW/2, baseY);
+        drawDashedLine(leftSlotCX + slotFrontW/2, topViewCenterY, leftSlotCX + slotFrontW/2, baseY);
+        drawDashedLine(rightSlotCX - slotFrontW/2, topViewCenterY, rightSlotCX - slotFrontW/2, baseY);
+        drawDashedLine(rightSlotCX + slotFrontW/2, topViewCenterY, rightSlotCX + slotFrontW/2, baseY);
+
+        stroke(0); strokeWeight(2); noFill();
+        drawDottedRect(leftSlotCX - slotFrontW/2, baseY - slotFrontH, slotFrontW, slotFrontH);
+        drawDottedRect(rightSlotCX - slotFrontW/2, baseY - slotFrontH, slotFrontW, slotFrontH);
+
+        if (step === 22) {
+            stroke(0); strokeWeight(1);
+            drawDimension(rightSlotCX - slotFrontW/2, baseY - slotFrontH - 10, rightSlotCX + slotFrontW/2, baseY - slotFrontH - 10, "20 mm", true);
+            fill(0); text("Step 23: Project slots to the front view and draw 20x14 mm dotted rectangles", 50, 40);
+        }
+    }
+
+    // STEP 24
+    if (step >= 23) {
+        let circleOffset = userVals[23] * VISUAL_SCALE;
+        let circleDia    = 10 * VISUAL_SCALE;
+        let circleR      = circleDia / 2;
+
+        let leftCircleX  = centerX - circleOffset;
+        let rightCircleX = centerX + circleOffset;
+
+        stroke(0); strokeWeight(2); noFill();
+        ellipse(leftCircleX, topViewCenterY, circleDia, circleDia);
+        ellipse(rightCircleX, topViewCenterY, circleDia, circleDia);
+
+        stroke(120); strokeWeight(1);
+        drawDashedLine(leftCircleX - circleR, topViewCenterY - circleR, leftCircleX - circleR, baseY);
+        drawDashedLine(leftCircleX + circleR, topViewCenterY - circleR, leftCircleX + circleR, baseY);
+        drawDashedLine(rightCircleX - circleR, topViewCenterY - circleR, rightCircleX - circleR, baseY);
+        drawDashedLine(rightCircleX + circleR, topViewCenterY - circleR, rightCircleX + circleR, baseY);
+
+        stroke(0); strokeWeight(2);
+        drawDashedLine(leftCircleX - circleR, finalTopY, leftCircleX - circleR, baseY);
+        drawDashedLine(leftCircleX + circleR, finalTopY, leftCircleX + circleR, baseY);
+
+        line(rightCircleX - circleR, finalTopY, rightCircleX - circleR, baseY);
+        line(rightCircleX + circleR, finalTopY, rightCircleX + circleR, baseY);
+
+        if (step === 23) {
+            stroke(0); strokeWeight(1);
+            drawDimension(centerX, topViewCenterY + 45, leftCircleX, topViewCenterY + 45, fmt(userVals[23]), true);
+            drawDimension(centerX, topViewCenterY + 45, rightCircleX, topViewCenterY + 45, fmt(userVals[23]), true);
+            drawDimension(rightCircleX - circleR, topViewCenterY - 15, rightCircleX + circleR, topViewCenterY - 15, "10 mm", true);
+            fill(0); text("Step 24: Draw 10 mm dia circles in Top View and project to Front View", 50, 40);
+        }
+    }
+
+    // STEP 25
+    if (step >= 24) {
+        let circleOffset = userVals[23] * VISUAL_SCALE;
+        let leftCircleX  = centerX - circleOffset;
+        let rightCircleX = centerX + circleOffset;
+
+        let rectWGreen = 20 * VISUAL_SCALE;
+        let rectHGreen = 7 * VISUAL_SCALE;
+        let rectYGreen = baseY - rectHGreen;
+
+        stroke(0, 100, 0); strokeWeight(2); noFill();
+        rect(leftCircleX - rectWGreen/2, rectYGreen, rectWGreen, rectHGreen);
+        rect(rightCircleX - rectWGreen/2, rectYGreen, rectWGreen, rectHGreen);
+
+        if (step === 24) {
+            stroke(0); strokeWeight(1);
+            drawDimension(leftCircleX - rectWGreen/2, rectYGreen - 10, leftCircleX + rectWGreen/2, rectYGreen - 10, "20 mm", true);
+            drawDimension(leftCircleX - rectWGreen/2 - 15, rectYGreen, leftCircleX - rectWGreen/2 - 15, baseY, "7 mm", false);
+            fill(0); text("Step 25: Draw 20x7 mm dark green rectangles over the base line", 50, 40);
+        }
+    }
+
+    // STEP 26
+    if (step >= 25) {
+        let sqW    = 6 * VISUAL_SCALE;
+        let halfSq = sqW / 2;
+
+        let sqTopY    = arcTopY + slotR;
+        let sqBottomY = sqTopY + 6 * VISUAL_SCALE;
+
+        let tipDrop = halfSq * Math.tan(radians(30));
+        let tipY    = sqBottomY + tipDrop;
+
+        stroke(255, 0, 0); strokeWeight(2);
+        drawDashedLine(centerX, sqTopY, centerX - halfSq, sqTopY);
+        drawDashedLine(centerX - halfSq, sqTopY, centerX - halfSq, sqBottomY);
+        drawDashedLine(centerX - halfSq, sqBottomY, centerX, sqBottomY);
+        drawDashedLine(centerX - halfSq, sqBottomY, centerX, tipY);
+
+        stroke(255, 0, 0); strokeWeight(4);
+        line(centerX, sqTopY, centerX + halfSq, sqTopY);
+        line(centerX + halfSq, sqTopY, centerX + halfSq, sqBottomY);
+        line(centerX + halfSq, sqBottomY, centerX, sqBottomY);
+        line(centerX + halfSq, sqBottomY, centerX, tipY);
+
+        stroke(255, 0, 0); strokeWeight(1);
+        drawDashedLine(centerX, sqTopY, centerX, tipY);
+
+        if (step === 25) {
+            stroke(0); strokeWeight(1);
+            drawDimension(centerX - halfSq, sqTopY - 15, centerX + halfSq, sqTopY - 15, "6 mm", true);
+            drawDimension(centerX + halfSq + 15, sqTopY, centerX + halfSq + 15, sqBottomY, "6 mm", false);
+            fill(0); text("Step 26: Base of the 6 mm red square touching the green semicircle", 50, 40);
+        }
+    }
+
+    // STEP 27
+    if (step >= 26) {
+        stroke(0, 120, 0); strokeWeight(3); noFill();
+        arc(centerX, arcTopY, 2 * slotR, 2 * slotR, PI, TWO_PI);
+
+        if (step === 26) {
+            stroke(0); strokeWeight(1);
+            drawDimension(centerX - slotR, arcTopY - slotR - 15, centerX + slotR, arcTopY - slotR - 15, fmtR(userVals[15]), true);
+            fill(0); text("Step 27: Draw upward semicircle (R" + int(userVals[15]) + ") to create a full circle", 50, 40);
+        }
+    }
+
+    // STEP 28
+    if (step >= 27) {
+        let circleCX = centerX;
+        let circleCY = arcTopY;
+        let r = slotR;
+
+        let riseFromCenter = 6 * VISUAL_SCALE;
+        let step28Y = circleCY - riseFromCenter;
+
+        let xOffset = sqrt(r * r - riseFromCenter * riseFromCenter);
+        let leftCirclePtX  = circleCX - xOffset;
+        let rightCirclePtX = circleCX + xOffset;
+
+        let leftHitX  = innerLeftX;
+        let rightHitX = innerRightX;
+        let blueTopY = step28Y - 12 * VISUAL_SCALE;
+
+        stroke(0, 0, 139); strokeWeight(4);
+        line(leftCirclePtX, step28Y, leftHitX, step28Y);
+        line(rightCirclePtX, step28Y, rightHitX, step28Y);
+        line(leftHitX, step28Y, leftHitX, blueTopY);
+        line(rightHitX, step28Y, rightHitX, blueTopY);
+
+        if (step === 27) {
+            stroke(0); strokeWeight(1);
+            drawDimension(circleCX + r + 18, circleCY, circleCX + r + 18, step28Y, "6 mm", false);
+            drawDimension(rightHitX + 18, step28Y, rightHitX + 18, blueTopY, "12 mm", false);
+            fill(0); text("Step 28: Draw dark blue horizontals from circle to green verticals, then rise 12 mm upward", 50, 40);
+        }
+    }
+
+    // STEP 29
+    if (step >= 28) {
+        let circleCX = centerX;
+        let circleCY = arcTopY;
+        let circleTopY = circleCY - slotR;
+        let newDottedY = circleTopY;
+
+        let newHalf = userVals[6] * VISUAL_SCALE;
+        let leftDotX  = circleCX - newHalf;
+        let rightDotX = circleCX + newHalf;
+
+        let rise10 = 10 * VISUAL_SCALE;
+        let newBlueTopY = newDottedY - rise10;
+
+        stroke(80); strokeWeight(2);
+        for (let x = leftDotX; x < rightDotX; x += 12) {
+            line(x, newDottedY, min(x + 6, rightDotX), newDottedY);
+        }
+
+        stroke(0, 0, 139); strokeWeight(4);
+        line(leftDotX, newDottedY, leftDotX, newBlueTopY);
+        line(rightDotX, newDottedY, rightDotX, newBlueTopY);
+
+        if (step === 28) {
+            stroke(0); strokeWeight(1);
+            drawDimension(circleCX, newDottedY - 20, leftDotX, newDottedY - 20, fmt(userVals[6]), true);
+            drawDimension(circleCX, newDottedY - 50, rightDotX, newDottedY - 50, fmt(userVals[6]), true);
+            drawDimension(rightDotX + 20, newDottedY, rightDotX + 20, newBlueTopY, "10 mm", false);
+            fill(0); text("Step 29: Draw dotted line " + fmt(userVals[6]) + " left/right above circle and raise dark blue corners by 10 mm", 50, 40);
+        }
+    }
+
+    // STEP 30
+    if (step >= 29) {
+        stroke(0, 160, 0); strokeWeight(3); noFill();
+        ellipse(centerX, arcTopY, 2 * bigR36, 2 * bigR36);
+
+        fill(0, 160, 0); noStroke();
+        ellipse(centerX, arcTopY, 8, 8);
+
+        if (step === 29) {
+            stroke(0); strokeWeight(1);
+            drawDimension(centerX, arcTopY - bigR36 - 25, centerX + bigR36, arcTopY - bigR36 - 25, fmtR(userVals[29]), true);
+            fill(0); text("Step 30: From the green circle centre draw a " + fmt(userVals[29]) + " radius circle", 50, 40);
+        }
+    }
+
+    // STEP 31
+    if (step >= 30) {
+        let circleCX = centerX;
+        let circleCY = arcTopY;
+        let R = bigR36;
+
+        let leftBlueX  = centerX - userVals[6] * VISUAL_SCALE;
+        let rightBlueX = centerX + userVals[6] * VISUAL_SCALE;
+
+        let circleTopY = circleCY - slotR;
+        let leftBlueTopY  = circleTopY - 10 * VISUAL_SCALE;
+        let rightBlueTopY = circleTopY - 10 * VISUAL_SCALE;
+
+        let dx = abs(leftBlueX - circleCX);
+        let yOffset = sqrt(R * R - dx * dx);
+
+        let leftMeetY  = circleCY - yOffset;
+        let rightMeetY = circleCY - yOffset;
+
+        stroke(0, 0, 139); strokeWeight(4);
+        line(leftBlueX, leftBlueTopY, leftBlueX, leftMeetY);
+        line(rightBlueX, rightBlueTopY, rightBlueX, rightMeetY);
+
+        if (step === 30) {
+            stroke(0); strokeWeight(1);
+            drawDimension(rightBlueX + 18, rightBlueTopY, rightBlueX + 18, rightMeetY, "to R" + int(userVals[29]), false);
+            fill(0); text("Step 31: Extend dark blue corner lines down till they touch the R" + int(userVals[29]) + " circle", 50, 40);
+        }
+    }
+
+    // STEP 32
+    if (step >= 31) {
+        let circleCY = arcTopY;
+        let circleTopY = circleCY - slotR;
+
+        let top12Y = (circleCY - 6 * VISUAL_SCALE) - 12 * VISUAL_SCALE;
+        let top10Y = circleTopY - 10 * VISUAL_SCALE;
+
+        let left12X  = innerLeftX;
+        let right12X = innerRightX;
+
+        let left10X  = centerX - userVals[6] * VISUAL_SCALE;
+        let right10X = centerX + userVals[6] * VISUAL_SCALE;
+
+        stroke(0, 0, 139); strokeWeight(4);
+        line(left12X, top12Y, left10X, top12Y);
+        line(right12X, top12Y, right10X, top12Y);
+        line(left10X, top12Y, left10X, top10Y);
+        line(right10X, top12Y, right10X, top10Y);
+
+        if (step === 31) {
+            stroke(0); strokeWeight(1);
+            drawDimension(left10X, top12Y - 20, left12X, top12Y - 20, "join to 10 mm vertical", true);
+            drawDimension(right12X, top12Y - 45, right10X, top12Y - 45, "join to 10 mm vertical", true);
+            fill(0); text("Step 32: Join the top corners of the 12 mm blue verticals to the 10 mm blue verticals", 50, 40);
+        }
+    }
+
+    // STEP 33
+    if (step >= 32) {
+        let circleCX = centerX;
+        let circleCY = arcTopY;
+        let r19 = slotR;
+        let R36 = bigR36;
+
+        let riseFromCenter = 6 * VISUAL_SCALE;
+        let step28Y = circleCY - riseFromCenter;
+        let xOffset28 = sqrt(r19 * r19 - riseFromCenter * riseFromCenter);
+
+        let leftCirclePtX  = circleCX - xOffset28;
+        let rightCirclePtX = circleCX + xOffset28;
+
+        let leftInnerX  = innerLeftX;
+        let rightInnerX = innerRightX;
+        let top12Y = step28Y - 12 * VISUAL_SCALE;
+
+        let circleTopY = circleCY - r19;
+        let top10Y = circleTopY - 10 * VISUAL_SCALE;
+
+        let left10X  = circleCX - userVals[6] * VISUAL_SCALE;
+        let right10X = circleCX + userVals[6] * VISUAL_SCALE;
+
+        let dx = abs(left10X - circleCX);
+        let yOffset = sqrt(R36 * R36 - dx * dx);
+
+        let leftMeetY  = circleCY - yOffset;
+        let rightMeetY = circleCY - yOffset;
+
+        stroke(0, 0, 139); strokeWeight(4);
+        line(leftCirclePtX, step28Y, leftInnerX, step28Y);
+        line(rightCirclePtX, step28Y, rightInnerX, step28Y);
+        line(leftInnerX, step28Y, leftInnerX, top12Y);
+        line(rightInnerX, step28Y, rightInnerX, top12Y);
+        line(leftInnerX, top12Y, left10X, top12Y);
+        line(rightInnerX, top12Y, right10X, top12Y);
+        line(left10X, top12Y, left10X, top10Y);
+        line(right10X, top12Y, right10X, top10Y);
+        line(left10X, top10Y, left10X, leftMeetY);
+        line(right10X, top10Y, right10X, rightMeetY);
+
+        if (step === 32) {
+            stroke(0); strokeWeight(1);
+            drawDimension(rightInnerX + 20, step28Y, rightInnerX + 20, top12Y, "12 mm", false);
+            drawDimension(right10X + 35, circleTopY, right10X + 35, top10Y, "10 mm", false);
+            fill(0); text("Step 33: Complete final dark-blue profile with 12 mm top corners joining the 10 mm blue verticals", 50, 40);
+        }
+    }
+
+    // STEP 34
+    if (step >= 33) {
+        let circleCX = centerX;
+        let circleCY = arcTopY;
+        let R36 = bigR36;
+        let r19 = slotR;
+
+        let circleTopY = circleCY - r19;
+        let top10Y = circleTopY - 10 * VISUAL_SCALE;
+
+        let left10X  = circleCX - userVals[6] * VISUAL_SCALE;
+        let right10X = circleCX + userVals[6] * VISUAL_SCALE;
+
+        let yFromCenter = top10Y - circleCY;
+        let xOffset = sqrt(R36 * R36 - yFromCenter * yFromCenter);
+
+        let leftCircleHitX  = circleCX - xOffset;
+        let rightCircleHitX = circleCX + xOffset;
+
+        stroke(0, 0, 139); strokeWeight(4);
+        line(left10X, top10Y, leftCircleHitX, top10Y);
+        line(right10X, top10Y, rightCircleHitX, top10Y);
+
+        if (step === 33) {
+            stroke(0); strokeWeight(1);
+            drawDimension(left10X, top10Y - 18, leftCircleHitX, top10Y - 18, "to R" + int(userVals[29]), true);
+            drawDimension(rightCircleHitX, top10Y - 45, right10X, top10Y - 45, "to R" + int(userVals[29]), true);
+            fill(0); text("Step 34: Extend the top dark-blue horizontal lines inward till they touch the R" + int(userVals[29]) + " circle", 50, 40);
+        }
+    }
+
+    // STEP 35
+    if (step >= 34) {
+        let circleOffset = userVals[23] * VISUAL_SCALE;
+        let circleDia    = 10 * VISUAL_SCALE;
+        let circleR      = circleDia / 2;
+
+        let leftCircleX  = centerX - circleOffset;
+        let rightCircleX = centerX + circleOffset;
+
+        let circleTopY = arcTopY - slotR;
+        let projTopY   = circleTopY - 10 * VISUAL_SCALE;
+
+        stroke(120); strokeWeight(1);
+        drawDashedLine(leftCircleX - circleR, baseY, leftCircleX - circleR, projTopY);
+        drawDashedLine(leftCircleX + circleR, baseY, leftCircleX + circleR, projTopY);
+
+        stroke(0); strokeWeight(3);
+        line(rightCircleX - circleR, baseY, rightCircleX - circleR, projTopY);
+        line(rightCircleX + circleR, baseY, rightCircleX + circleR, projTopY);
+
+        if (step === 34) {
+            stroke(0); strokeWeight(1);
+            drawDimension(rightCircleX - circleR, projTopY - 20, rightCircleX + circleR, projTopY - 20, "10 mm", true);
+            fill(0); text("Step 35: Extend projected circle lines upward till the upper dark-blue level", 50, 40);
+        }
+    }
+
+    // STEP 36
+    if (step >= 35) {
+        let circleOffset = userVals[23] * VISUAL_SCALE;
+        let leftCircleX  = centerX - circleOffset;
+        let rightCircleX = centerX + circleOffset;
+
+        let circleTopY = arcTopY - slotR;
+        let projTopY   = circleTopY - 10 * VISUAL_SCALE;
+
+        let rectWStack  = 20 * VISUAL_SCALE;
+        let rectH1Stack = 8 * VISUAL_SCALE;
+        let rectH2Stack = 5 * VISUAL_SCALE;
+
+        stroke(0); strokeWeight(2); noFill();
+        rect(leftCircleX - rectWStack/2, projTopY - rectH1Stack, rectWStack, rectH1Stack);
+        rect(leftCircleX - rectWStack/2, projTopY - rectH1Stack - rectH2Stack, rectWStack, rectH2Stack);
+
+        rect(rightCircleX - rectWStack/2, projTopY - rectH1Stack, rectWStack, rectH1Stack);
+        rect(rightCircleX - rectWStack/2, projTopY - rectH1Stack - rectH2Stack, rectWStack, rectH2Stack);
+
+        if (step === 35) {
+            stroke(0); strokeWeight(1);
+            drawDimension(rightCircleX - rectWStack/2, projTopY - rectH1Stack - rectH2Stack - 15, rightCircleX + rectWStack/2, projTopY - rectH1Stack - rectH2Stack - 15, "20 mm", true);
+            drawDimension(rightCircleX + rectWStack/2 + 10, projTopY, rightCircleX + rectWStack/2 + 10, projTopY - rectH1Stack, "8 mm", false);
+            drawDimension(rightCircleX + rectWStack/2 + 35, projTopY - rectH1Stack, rightCircleX + rectWStack/2 + 35, projTopY - rectH1Stack - rectH2Stack, "5 mm", false);
+            fill(0); text("Step 36: Draw two stacked rectangles (20x8 mm and 20x5 mm) extending 13 mm upward on both sides", 50, 40);
+        }
+    }
+
+    // STEP 37
+    if (step >= 36) {
+        stroke(120); strokeWeight(1);
+        drawDashedLine(arcLeftX, arcTopY, arcLeftX, topViewTopY);
+        drawDashedLine(arcRightX, arcTopY, arcRightX, topViewTopY);
+
+        let r12 = 12 * VISUAL_SCALE;
+        stroke(255, 0, 0); strokeWeight(4);
+
+        if (step >= 37) {
+            line(arcLeftX, topViewTopY, arcLeftX, topViewCenterY - r12);
+            line(arcLeftX, topViewCenterY + r12, arcLeftX, topViewBottomY);
+            line(arcRightX, topViewTopY, arcRightX, topViewCenterY - r12);
+            line(arcRightX, topViewCenterY + r12, arcRightX, topViewBottomY);
+        } else {
+            line(arcLeftX, topViewTopY, arcLeftX, topViewBottomY);
+            line(arcRightX, topViewTopY, arcRightX, topViewBottomY);
+        }
+
+        if (step === 36) {
+            fill(0); text("Step 37: Project the corners connecting the vertical green lines down to Top View as thick red lines", 50, 40);
+        }
+    }
+
+    // STEP 38
+    if (step >= 37) {
+        let r12 = 12 * VISUAL_SCALE;
+        stroke(255, 0, 127); strokeWeight(3); noFill();
+
+        if (step < 38) {
+            ellipse(arcLeftX, topViewCenterY, 2 * r12, 2 * r12);
+            ellipse(arcRightX, topViewCenterY, 2 * r12, 2 * r12);
+        } else {
+            arc(arcLeftX, topViewCenterY, 2 * r12, 2 * r12, -HALF_PI, HALF_PI);
+            arc(arcRightX, topViewCenterY, 2 * r12, 2 * r12, HALF_PI, PI + HALF_PI);
+        }
+
+        if (step === 37) {
+            stroke(0); strokeWeight(1);
+            drawDimension(arcLeftX, topViewCenterY + r12 + 15, arcLeftX + r12, topViewCenterY + r12 + 15, "12 mm R", true);
+            fill(0); text("Step 38: Draw 12 mm radius rose circles centered on the red lines and trim the lines inside", 50, 40);
+        }
+    }
+
+    // STEP 39
+    if (step >= 38) {
+        if (step === 38) {
+            let r12 = 12 * VISUAL_SCALE;
+            stroke(0); strokeWeight(1);
+            drawDimension(arcLeftX, topViewCenterY + r12 + 15, arcLeftX + r12, topViewCenterY + r12 + 15, "12 mm R", true);
+            fill(0); text("Step 39: Trim rose circles to form semicircles", 50, 40);
+        }
+    }
+
+    // STEP 40
+    if (step >= 39) {
+        let holeTopY = arcTopY - bigR36;          
+        let holeMidY = holeTopY + 20 * VISUAL_SCALE;     
+        let holeBottomY = arcTopY - slotR;        
+
+        let w1 = 3 * VISUAL_SCALE;
+        let w2 = 1.5 * VISUAL_SCALE;
+
+        stroke(50, 50, 50); strokeWeight(2);
+        drawDashedLine(centerX - w1, holeTopY, centerX - w1, holeMidY);
+        drawDashedLine(centerX + w1, holeTopY, centerX + w1, holeMidY);
+        drawDashedLine(centerX - w1, holeMidY, centerX - w2, holeMidY);
+        drawDashedLine(centerX + w1, holeMidY, centerX + w2, holeMidY);
+        drawDashedLine(centerX - w2, holeMidY, centerX - w2, holeBottomY);
+        drawDashedLine(centerX + w2, holeMidY, centerX + w2, holeBottomY);
+
+        if (step === 39) {
+            stroke(0); strokeWeight(1);
+            drawDimension(centerX + w1 + 15, holeTopY, centerX + w1 + 15, holeMidY, "20 mm", false);
+            drawDimension(centerX - w1, holeTopY - 15, centerX + w1, holeTopY - 15, "6 mm", true);
+            drawDimension(centerX - w2, (holeMidY + holeBottomY)/2, centerX + w2, (holeMidY + holeBottomY)/2, "3 mm", true);
+            fill(0); text("Step 40: Draw oil hole inside top of green circle", 50, 40);
+        }
+    }
+
+    // STEP 41
+    if (step >= 40) {
+        let holeTopY = arcTopY - bigR36; 
+        
+        let angle = radians(30); 
+        let leaderLength = 35 * VISUAL_SCALE;
+        
+        let endX = centerX + leaderLength * Math.cos(angle);
+        let endY = holeTopY - leaderLength * Math.sin(angle);
+        let tailLength = 20 * VISUAL_SCALE;
+
+        stroke(0); strokeWeight(2);
+        line(centerX, holeTopY, endX, endY);
+        line(endX, endY, endX + tailLength, endY);
+        
+        let arrowBase = 3 * VISUAL_SCALE;
+        let arrowWidth = 1.5 * VISUAL_SCALE;
+        
+        fill(0); noStroke();
+        pushMatrix();
+        translate(centerX, holeTopY);
+        rotate(-angle);
+        triangle(0, 0, arrowBase, -arrowWidth, arrowBase, arrowWidth);
+        popMatrix();
+
+        fill(0); textSize(14); textAlign('LEFT', 'BOTTOM');
+        text("Oil Hole", endX + 5, endY - 2);
+        textAlign('LEFT', 'CENTER'); 
+
+        if (step === 40) {
+            fill(0); textSize(16);
+            text("Step 41: Draw a 30-degree leader line with a triangle pointing to the oil hole", 50, 40);
+        }
+    }
+}
+
+// =========================================================
+// HELPER DRAWING FUNCTIONS
+// =========================================================
+function drawDashedLine(x1, y1, x2, y2) {
+    let d = dist(x1, y1, x2, y2);
+    let dashes = max(1, int(d / 10));
+    let dx = (x2 - x1) / dashes;
+    let dy = (y2 - y1) / dashes;
+
+    for (let i = 0; i < dashes; i++) {
+        line(x1 + dx * i, y1 + dy * i,
+             x1 + dx * (i + 0.5), y1 + dy * (i + 0.5));
+    }
+}
+
+function drawDottedRect(x, y, w, h) {
+    drawDashedLine(x, y, x + w, y);
+    drawDashedLine(x, y, x, y + h);
+    drawDashedLine(x + w, y, x + w, y + h);
+    drawDashedLine(x, y + h, x + w, y + h);
+}
+
+function drawDimension(x1, y1, x2, y2, label, horizontal) {
+    stroke(0); strokeWeight(1);
+    line(x1, y1, x2, y2);
+
+    let a = 6;
+
+    if (horizontal) {
+        line(x1, y1, x1 + a, y1 - a);
+        line(x1, y1, x1 + a, y1 + a);
+        line(x2, y2, x2 - a, y2 - a);
+        line(x2, y2, x2 - a, y2 + a);
+
+        fill(0);
+        text(label, (x1 + x2) / 2 - 25, y1 - 10);
+    } else {
+        line(x1, y1, x1 - a, y1 + a);
+        line(x1, y1, x1 + a, y1 + a);
+        line(x2, y2, x2 - a, y2 - a);
+        line(x2, y2, x2 + a, y2 - a);
+
+        fill(0);
+        text(label, x1 + 10, (y1 + y2) / 2);
+    }
+}
+
+// Kick off
+setup();
+
+</script>
+</body>
+</html>
