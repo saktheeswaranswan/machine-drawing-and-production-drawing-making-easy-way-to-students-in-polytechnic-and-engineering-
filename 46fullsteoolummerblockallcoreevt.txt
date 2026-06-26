@@ -1,0 +1,1470 @@
+int step = 0;
+float scale = 3.0;
+
+void setup() {
+  size(950, 900);
+  textSize(16);
+  textAlign(LEFT, CENTER);
+}
+
+void draw() {
+  background(255);
+
+  float centerX = width / 2;
+  float baseY   = 520;
+
+  // =========================
+  // Main front-view dimensions
+  // =========================
+  float baseW   = 168 * scale;
+  float sideH   = 14 * scale;
+  float ledgeW  = 4 * scale;
+
+  float topY = baseY - sideH;
+
+  // =========================
+  // Upper purple box construction
+  // =========================
+  float halfPurple = 43 * scale;
+  float upHeight1  = 30 * scale;
+  float upHeight2  = 25 * scale;
+
+  float leftPurpleX  = centerX - halfPurple;
+  float rightPurpleX = centerX + halfPurple;
+  float firstTopY    = topY - upHeight1;
+  float finalTopY    = firstTopY - upHeight2;
+
+  // =========================
+  // Inner green rectangle
+  // =========================
+  float innerHalfW   = 22 * scale;
+  float innerH       = 12 * scale;
+  float innerLeftX   = centerX - innerHalfW;
+  float innerRightX  = centerX + innerHalfW;
+  float innerBottomY = finalTopY + innerH;
+
+  // =========================
+  // Construction line 3 mm below green rectangle
+  // =========================
+  float gapBelowRect = 3 * scale;
+  float dottedY      = innerBottomY + gapBelowRect;
+
+  // =========================
+  // Final semicircular slot
+  // =========================
+  float slotR      = 19 * scale;
+  float slotHalfW  = slotR;
+  float dropH      = 3 * scale;
+
+  float arcLeftX   = centerX - slotHalfW;
+  float arcRightX  = centerX + slotHalfW;
+  float arcTopY    = innerBottomY + dropH;
+  float arcBottomY = arcTopY + slotR;
+
+  // =========================
+  // 36 mm radius from green circle center
+  // =========================
+  float bigR36 = 36 * scale;
+
+  // =========================
+  // Orange rectangle dimensions
+  // =========================
+  float orangeGap    = 8 * scale;
+  float orangeH      = 2 * scale;
+  float orangeLeftX  = centerX - baseW/2 + orangeGap;
+  float orangeRightX = centerX + baseW/2 - orangeGap;
+  float orangeTopY   = baseY - orangeH;
+
+  // =========================================================
+  // TOP VIEW below front view
+  // =========================================================
+  float topViewGap      = 20 * scale;
+  float topViewW        = 168 * scale;
+  float topViewH        = 36 * scale;
+
+  float topViewTopY     = baseY + topViewGap;
+  float topViewBottomY  = topViewTopY + topViewH;
+  float topViewLeftX    = centerX - topViewW / 2;
+  float topViewRightX   = centerX + topViewW / 2;
+  float topViewCenterY  = topViewTopY + topViewH / 2;
+
+  stroke(0);
+  strokeWeight(2);
+
+  // =========================================================
+  // STEP 1: Draw 168 mm base line [Charcoal]
+  // =========================================================
+  if (step >= 0) {
+    boolean show = (step != 0 || (frameCount % 30 < 15));
+    if (show) {
+      stroke(50, 50, 50);
+      strokeWeight(2);
+      line(centerX - baseW/2, baseY, centerX + baseW/2, baseY);
+    }
+
+    if (step == 0) {
+      drawDimension(centerX - baseW/2, baseY + 45, centerX + baseW/2, baseY + 45, "168 mm", true, color(50, 50, 50));
+      fill(50, 50, 50);
+      text("Step 1: Draw 168 mm base line", 50, 40);
+    }
+  }
+
+  // =========================================================
+  // STEP 2: Mark center point on base line [Bright Red]
+  // =========================================================
+  if (step >= 1) {
+    boolean show = (step != 1 || (frameCount % 30 < 15));
+    if (show) {
+      fill(255, 0, 0);
+      noStroke();
+      ellipse(centerX, baseY, 10, 10);
+    }
+
+    if (step == 1) {
+      fill(255, 0, 0);
+      text("Step 2: Mark centre point on base line", 50, 40);
+    }
+  }
+
+  // =========================================================
+  // STEP 3: Draw vertical dotted center line [Bright Blue]
+  // =========================================================
+  if (step >= 2) {
+    boolean show = (step != 2 || (frameCount % 30 < 15));
+    if (show) {
+      stroke(0, 0, 255);
+      strokeWeight(1);
+      for (float y = 100; y < baseY + 20; y += 18) {
+        line(centerX, y, centerX, y + 9);
+      }
+    }
+
+    if (step == 2) {
+      fill(0, 0, 255);
+      text("Step 3: Draw vertical centre line", 50, 40);
+    }
+  }
+
+  // =========================================================
+  // STEP 4: Draw 14 mm vertical side walls [Vibrant Green]
+  // =========================================================
+  if (step >= 3) {
+    boolean show = (step != 3 || (frameCount % 30 < 15));
+    if (show) {
+      stroke(0, 150, 0);
+      strokeWeight(2);
+      line(centerX - baseW/2, baseY, centerX - baseW/2, topY);
+      line(centerX + baseW/2, baseY, centerX + baseW/2, topY);
+    }
+
+    if (step == 3) {
+      drawDimension(centerX - baseW/2 - 25, baseY, centerX - baseW/2 - 25, topY, "14 mm", false, color(0, 150, 0));
+      fill(0, 150, 0);
+      text("Step 4: Draw 14 mm vertical side walls", 50, 40);
+    }
+  }
+
+  // =========================================================
+  // STEP 5: Draw 4 mm inward ledges [Dark Amber]
+  // =========================================================
+  if (step >= 4) {
+    boolean show = (step != 4 || (frameCount % 30 < 15));
+    if (show) {
+      stroke(200, 120, 0);
+      strokeWeight(2);
+      line(centerX - baseW/2, topY, centerX - baseW/2 + ledgeW, topY);
+      line(centerX + baseW/2, topY, centerX + baseW/2 - ledgeW, topY);
+    }
+
+    if (step == 4) {
+      drawDimension(centerX - baseW/2, topY - 25, centerX - baseW/2 + ledgeW, topY - 25, "4 mm", true, color(200, 120, 0));
+      fill(200, 120, 0);
+      text("Step 5: Draw 4 mm inward ledges", 50, 40);
+    }
+  }
+
+  // =========================================================
+  // STEP 6: Draw sloping sides + top flange line [Cyan]
+  // =========================================================
+  if (step >= 5) {
+    boolean show = (step != 5 || (frameCount % 30 < 15));
+    if (show) {
+      stroke(0, 200, 200);
+      strokeWeight(1);
+      line(centerX - baseW/2, baseY, centerX - baseW/2 + ledgeW, topY);
+      line(centerX + baseW/2, baseY, centerX + baseW/2 - ledgeW, topY);
+
+      stroke(0, 200, 200);
+      strokeWeight(3);
+      line(centerX - baseW/2 + ledgeW, topY, centerX + baseW/2 - ledgeW, topY);
+    }
+
+    if (step == 5) {
+      fill(0, 200, 200);
+      text("Step 6: Draw base profile and top reference line", 50, 40);
+    }
+  }
+
+  // =========================================================
+  // STEP 7: Mark 43 mm left and right on reference line [Purple]
+  // =========================================================
+  if (step >= 6) {
+    boolean show = (step != 6 || (frameCount % 30 < 15));
+    if (show) {
+      fill(150, 0, 200);
+      noStroke();
+      ellipse(leftPurpleX, topY, 8, 8);
+      ellipse(rightPurpleX, topY, 8, 8);
+    }
+
+    if (step == 6) {
+      drawDimension(centerX, topY - 45, leftPurpleX, topY - 45, "43 mm", true, color(150, 0, 200));
+      drawDimension(centerX, topY - 75, rightPurpleX, topY - 75, "43 mm", true, color(150, 0, 200));
+      fill(150, 0, 200);
+      text("Step 7: Mark 43 mm left and right on reference line", 50, 40);
+    }
+  }
+
+  // =========================================================
+  // STEP 8: Draw first 30 mm verticals upward [Hot Pink]
+  // =========================================================
+  if (step >= 7) {
+    boolean show = (step != 7 || (frameCount % 30 < 15));
+    if (show) {
+      stroke(255, 105, 180);
+      strokeWeight(3);
+      line(leftPurpleX, topY, leftPurpleX, firstTopY);
+      line(rightPurpleX, topY, rightPurpleX, firstTopY);
+
+      fill(255, 105, 180);
+      noStroke();
+      ellipse(leftPurpleX, firstTopY, 8, 8);
+      ellipse(rightPurpleX, firstTopY, 8, 8);
+    }
+
+    if (step == 7) {
+      drawDimension(rightPurpleX + 25, topY, rightPurpleX + 25, firstTopY, "30 mm", false, color(255, 105, 180));
+      fill(255, 105, 180);
+      text("Step 8: Draw 30 mm verticals upward", 50, 40);
+    }
+  }
+
+  // =========================================================
+  // STEP 9: Extend both verticals upward by 25 mm [Orange-Red]
+  // =========================================================
+  if (step >= 8) {
+    boolean show = (step != 8 || (frameCount % 30 < 15));
+    if (show) {
+      stroke(255, 69, 0);
+      strokeWeight(3);
+      line(leftPurpleX, firstTopY, leftPurpleX, finalTopY);
+      line(rightPurpleX, firstTopY, rightPurpleX, finalTopY);
+
+      fill(255, 69, 0);
+      noStroke();
+      ellipse(leftPurpleX, finalTopY, 8, 8);
+      ellipse(rightPurpleX, finalTopY, 8, 8);
+    }
+
+    if (step == 8) {
+      drawDimension(rightPurpleX + 45, firstTopY, rightPurpleX + 45, finalTopY, "25 mm", false, color(255, 69, 0));
+      fill(255, 69, 0);
+      text("Step 9: Extend both side verticals upward by 25 mm", 50, 40);
+    }
+  }
+
+  // =========================================================
+  // STEP 10: Draw final straight horizontal top line [Sea Green]
+  // =========================================================
+  if (step >= 9) {
+    boolean show = (step != 9 || (frameCount % 30 < 15));
+    if (show) {
+      stroke(46, 139, 87);
+      strokeWeight(4);
+      line(leftPurpleX, finalTopY, rightPurpleX, finalTopY);
+    }
+
+    if (step == 9) {
+      fill(46, 139, 87);
+      text("Step 10: Draw straight horizontal top line", 50, 40);
+    }
+  }
+
+  // =========================================================
+  // STEP 11: Show main housing box layout height [Saddle Brown]
+  // =========================================================
+  if (step >= 10) {
+    boolean show = (step != 10 || (frameCount % 30 < 15));
+    if (show) {
+      stroke(139, 69, 19);
+      strokeWeight(2);
+      line(centerX, baseY, centerX, finalTopY);
+
+      fill(139, 69, 19);
+      noStroke();
+      ellipse(centerX, finalTopY, 8, 8);
+    }
+
+    if (step == 10) {
+      drawDimension(rightPurpleX + 70, topY, rightPurpleX + 70, finalTopY, "55 mm", false, color(139, 69, 19));
+      fill(139, 69, 19);
+      text("Step 11: Verify main box height profile = 55 mm", 50, 40);
+    }
+  }
+
+  // =========================================================
+  // STEP 12: From top center mark 22 mm left and right [Slate Gray]
+  // =========================================================
+  if (step >= 11) {
+    boolean show = (step != 11 || (frameCount % 30 < 15));
+    if (show) {
+      stroke(112, 128, 144);
+      strokeWeight(2);
+      line(centerX, finalTopY - 8, centerX, finalTopY + 8);
+
+      fill(112, 128, 144);
+      noStroke();
+      ellipse(innerLeftX, finalTopY, 8, 8);
+      ellipse(innerRightX, finalTopY, 8, 8);
+    }
+
+    if (step == 11) {
+      drawDimension(centerX, finalTopY - 40, innerLeftX, finalTopY - 40, "22 mm", true, color(112, 128, 144));
+      drawDimension(centerX, finalTopY - 70, innerRightX, finalTopY - 70, "22 mm", true, color(112, 128, 144));
+      fill(112, 128, 144);
+      text("Step 12: Mark 22 mm left and right from housing top center", 50, 40);
+    }
+  }
+
+  // =========================================================
+  // STEP 13: Draw 12 mm verticals downward [Indigo]
+  // =========================================================
+  if (step >= 12) {
+    boolean show = (step != 12 || (frameCount % 30 < 15));
+    if (show) {
+      stroke(75, 0, 130);
+      strokeWeight(3);
+      line(innerLeftX, finalTopY, innerLeftX, innerBottomY);
+      line(innerRightX, finalTopY, innerRightX, innerBottomY);
+
+      fill(75, 0, 130);
+      noStroke();
+      ellipse(innerLeftX, innerBottomY, 8, 8);
+      ellipse(innerRightX, innerBottomY, 8, 8);
+    }
+
+    if (step == 12) {
+      drawDimension(innerRightX + 30, finalTopY, innerRightX + 30, innerBottomY, "12 mm", false, color(75, 0, 130));
+      fill(75, 0, 130);
+      text("Step 13: Draw 12 mm downward verticals inside the housing cap", 50, 40);
+    }
+  }
+
+  // =========================================================
+  // STEP 14: Complete 44 x 12 rectangle guide [Goldenrod]
+  // =========================================================
+  if (step >= 13) {
+    boolean show = (step != 13 || (frameCount % 30 < 15));
+    if (show) {
+      stroke(218, 165, 32);
+      strokeWeight(3);
+      line(innerLeftX, finalTopY, innerRightX, finalTopY);
+      line(innerLeftX, innerBottomY, innerRightX, innerBottomY);
+    }
+
+    if (step == 13) {
+      drawDimension(innerLeftX, innerBottomY + 35, innerRightX, innerBottomY + 35, "44 mm", true, color(218, 165, 32));
+      fill(218, 165, 32);
+      text("Step 14: Complete the 44 mm × 12 mm internal reference window", 50, 40);
+    }
+  }
+
+  // =========================================================
+  // STEP 15: Draw 3 mm construction line below window [Deep Pink]
+  // =========================================================
+  if (step >= 14) {
+    boolean show = (step != 14 || (frameCount % 30 < 15));
+    if (show) {
+      stroke(255, 20, 147);
+      strokeWeight(2);
+      for (float x = innerLeftX; x < innerRightX; x += 12) {
+        line(x, dottedY, min(x + 6, innerRightX), dottedY);
+      }
+    }
+
+    if (step == 14) {
+      drawDimension(innerRightX + 30, innerBottomY, innerRightX + 30, dottedY, "3 mm", false, color(255, 20, 147));
+      fill(255, 20, 147);
+      text("Step 15: Draw offset reference line 3 mm below internal window", 50, 40);
+    }
+  }
+
+  // =========================================================
+  // STEP 16: Construct the lower component slot R19 [Teal]
+  // =========================================================
+  if (step >= 15) {
+    float leftStepEndX  = arcLeftX;
+    float rightStepEndX = arcRightX;
+
+    boolean show = (step != 15 || (frameCount % 30 < 15));
+    if (show) {
+      stroke(255);
+      strokeWeight(5);
+      line(innerLeftX, innerBottomY, innerRightX, innerBottomY);
+
+      stroke(0, 128, 128);
+      strokeWeight(3);
+      line(innerLeftX, finalTopY, innerLeftX, innerBottomY);
+      line(innerRightX, finalTopY, innerRightX, innerBottomY);
+      line(innerLeftX, finalTopY, innerRightX, finalTopY);
+
+      line(innerLeftX, innerBottomY, leftStepEndX, innerBottomY);
+      line(rightStepEndX, innerBottomY, innerRightX, innerBottomY);
+
+      line(arcLeftX, innerBottomY, arcLeftX, arcTopY);
+      line(arcRightX, innerBottomY, arcRightX, arcTopY);
+
+      noFill();
+      arc(centerX, arcTopY, 2 * slotR, 2 * slotR, 0, PI);
+    }
+
+    if (step == 15) {
+      drawDimension(arcRightX + 35, arcTopY, arcRightX + 35, arcBottomY, "19 mm", false, color(0, 128, 128));
+      fill(0, 128, 128);
+      text("Step 16: Form side steps and clear out bottom R19 semicircle slot", 50, 40);
+    }
+  }
+
+  // =========================================================
+  // STEP 17: Draw primary Top View layout rectangle [Navy Blue]
+  // =========================================================
+  if (step >= 16) {
+    boolean show = (step != 16 || (frameCount % 30 < 15));
+    if (show) {
+      stroke(0, 0, 128);
+      strokeWeight(1);
+      line(centerX - baseW/2, baseY, centerX - baseW/2, topViewTopY);
+      line(centerX + baseW/2, baseY, centerX + baseW/2, topViewTopY);
+
+      for (float y = baseY + 8; y < topViewBottomY; y += 18) {
+        line(centerX, y, min(centerX, centerX), min(y + 9, topViewBottomY));
+      }
+
+      stroke(0, 0, 128);
+      strokeWeight(2);
+      fill(255);
+      rect(topViewLeftX, topViewTopY, topViewW, topViewH);
+    }
+
+    if (step == 16) {
+      drawDimension(topViewLeftX, topViewBottomY + 35, topViewRightX, topViewBottomY + 35, "168 mm", true, color(0, 0, 128));
+      drawDimension(topViewRightX + 35, topViewTopY, topViewRightX + 35, topViewBottomY, "36 mm", false, color(0, 0, 128));
+      drawDimension(topViewLeftX - 35, baseY, topViewLeftX - 35, topViewTopY, "20 mm", false, color(0, 0, 128));
+      fill(0, 0, 128);
+      text("Step 17: Project base edges down to establish Top View boundaries (168 × 36 mm)", 50, 40);
+    }
+  }
+
+  // =========================================================
+  // STEP 18: Horizontal center line & reference body arcs [Olive]
+  // =========================================================
+  if (step >= 17) {
+    float arcRadius = 43 * scale;
+
+    boolean show = (step != 17 || (frameCount % 30 < 15));
+    if (show) {
+      stroke(128, 128, 0);
+      strokeWeight(1);
+      for (float x = topViewLeftX + 5; x < topViewRightX; x += 18) {
+        line(x, topViewCenterY, min(x + 9, topViewRightX), topViewCenterY);
+      }
+
+      clip(int(topViewLeftX), int(topViewTopY), int(topViewW), int(topViewH));
+      stroke(128, 128, 0);
+      strokeWeight(2);
+      noFill();
+
+      ellipse(centerX, topViewCenterY, arcRadius * 2, arcRadius * 2);
+      noClip();
+    }
+
+    if (step == 17) {
+      drawDimension(centerX, topViewCenterY - 12, centerX + arcRadius, topViewCenterY - 12, "43 mm", true, color(128, 128, 0));
+      fill(128, 128, 0);
+      text("Step 18: Map horizontal symmetry line and plot 43 mm structural body arcs", 50, 40);
+    }
+  }
+
+  // =========================================================
+  // STEP 19: Map bolt layout centers and slotted bases [Bright Orange]
+  // =========================================================
+  if (step >= 18) {
+    float rectOffset = 64 * scale;
+    float rectW      = 8 * scale;
+    float rectH      = 10 * scale;
+
+    boolean show = (step != 18 || (frameCount % 30 < 15));
+    if (show) {
+      fill(255, 165, 0);
+      noStroke();
+      ellipse(centerX, topViewCenterY, 8, 8);
+
+      stroke(255, 165, 0);
+      strokeWeight(2);
+      noFill();
+
+      rect(centerX - rectOffset - rectW/2, topViewCenterY - rectH/2, rectW, rectH);
+      rect(centerX + rectOffset - rectW/2, topViewCenterY - rectH/2, rectW, rectH);
+    }
+
+    if (step == 18) {
+      drawDimension(centerX, topViewCenterY + 30, centerX - rectOffset, topViewCenterY + 30, "64 mm", true, color(255, 165, 0));
+      drawDimension(centerX, topViewCenterY + 30, centerX + rectOffset, topViewCenterY + 30, "64 mm", true, color(255, 165, 0));
+      drawDimension(centerX - rectOffset - rectW/2, topViewCenterY - 20, centerX - rectOffset + rectW/2, topViewCenterY - 20, "8 mm", true, color(255, 165, 0));
+      drawDimension(centerX + rectOffset + rectW/2 + 10, topViewCenterY - rectH/2, centerX + rectOffset + rectW/2 + 10, topViewCenterY + rectH/2, "10 mm", false, color(255, 165, 0));
+      fill(255, 165, 0);
+      text("Step 19: Build 8 × 10 mm core guidelines for base bolt slots at 64 mm radius", 50, 40);
+    }
+  }
+
+  // =========================================================
+  // STEP 20: Generate R5 circular rounds on core slots [Medium Purple]
+  // =========================================================
+  if (step >= 19) {
+    float rectOffset = 64 * scale;
+    float rectW      = 8 * scale;
+    float r          = 5 * scale;
+
+    float leftSlotCX  = centerX - rectOffset;
+    float rightSlotCX = centerX + rectOffset;
+
+    boolean show = (step != 19 || (frameCount % 30 < 15));
+    if (show) {
+      stroke(255);
+      strokeWeight(4);
+      line(leftSlotCX - rectW/2, topViewCenterY - r + 1, leftSlotCX - rectW/2, topViewCenterY + r - 1);
+      line(leftSlotCX + rectW/2, topViewCenterY - r + 1, leftSlotCX + rectW/2, topViewCenterY + r - 1);
+      line(rightSlotCX - rectW/2, topViewCenterY - r + 1, rightSlotCX - rectW/2, topViewCenterY + r - 1);
+      line(rightSlotCX + rectW/2, topViewCenterY - r + 1, rightSlotCX + rectW/2, topViewCenterY + r - 1);
+
+      stroke(147, 112, 219);
+      strokeWeight(2);
+      noFill();
+
+      arc(leftSlotCX - rectW/2, topViewCenterY, 2*r, 2*r, HALF_PI, PI + HALF_PI);
+      arc(leftSlotCX + rectW/2, topViewCenterY, 2*r, 2*r, -HALF_PI, HALF_PI);
+      arc(rightSlotCX - rectW/2, topViewCenterY, 2*r, 2*r, HALF_PI, PI + HALF_PI);
+      arc(rightSlotCX + rectW/2, topViewCenterY, 2*r, 2*r, -HALF_PI, HALF_PI);
+
+      line(leftSlotCX - rectW/2, topViewCenterY - r, leftSlotCX + rectW/2, topViewCenterY - r);
+      line(leftSlotCX - rectW/2, topViewCenterY + r, leftSlotCX + rectW/2, topViewCenterY + r);
+      line(rightSlotCX - rectW/2, topViewCenterY - r, rightSlotCX + rectW/2, topViewCenterY - r);
+      line(rightSlotCX - rectW/2, topViewCenterY + r, rightSlotCX + rectW/2, topViewCenterY + r);
+    }
+
+    if (step == 19) {
+      drawDimension(rightSlotCX + rectW/2 + 3, topViewCenterY, rightSlotCX + rectW/2 + r + 20, topViewCenterY, "R5", true, color(147, 112, 219));
+      fill(147, 112, 219);
+      text("Step 20: Apply R5 full-radius arcs to enclose the base assembly slots", 50, 40);
+    }
+  }
+
+  // =========================================================
+  // STEP 21: Draw 2 mm clearance channel step [Spring Green]
+  // =========================================================
+  if (step >= 20) {
+    boolean show = (step != 20 || (frameCount % 30 < 15));
+    if (show) {
+      stroke(0, 255, 127);
+      strokeWeight(2);
+      noFill();
+
+      line(orangeLeftX, baseY, orangeLeftX, orangeTopY);
+      line(orangeRightX, baseY, orangeRightX, orangeTopY);
+      line(orangeLeftX, orangeTopY, orangeRightX, orangeTopY);
+    }
+
+    if (step == 20) {
+      drawDimension(centerX - baseW/2, baseY - 5, orangeLeftX, baseY - 5, "8 mm", true, color(0, 255, 127));
+      drawDimension(orangeRightX, baseY - 5, centerX + baseW/2, baseY - 5, "8 mm", true, color(0, 255, 127));
+      drawDimension(orangeRightX + 15, baseY, orangeRightX + 15, orangeTopY, "2 mm", false, color(0, 255, 127));
+      fill(0, 255, 127);
+      text("Step 21: Inset a 2 mm tall clearance profile channel 8 mm inside from base corners", 50, 40);
+    }
+  }
+
+  // =========================================================
+  // STEP 22: Add base alignment structural lugs [Crimson]
+  // =========================================================
+  if (step >= 21) {
+    float botOffset = 8 * scale;
+    float botW      = 2 * scale;
+    float botH      = 2 * scale;
+
+    boolean show = (step != 21 || (frameCount % 30 < 15));
+    if (show) {
+      stroke(220, 20, 60);
+      strokeWeight(2);
+      noFill();
+
+      rect(centerX - botOffset - botW, baseY, botW, botH);
+      rect(centerX + botOffset, baseY, botW, botH);
+    }
+
+    if (step == 21) {
+      drawDimension(centerX, baseY + 12, centerX + botOffset, baseY + 12, "8 mm", true, color(220, 20, 60));
+      drawDimension(centerX + botOffset, baseY + 24, centerX + botOffset + botW, baseY + 24, "2 mm", true, color(220, 20, 60));
+      fill(220, 20, 60);
+      text("Step 22: Draw two 2 mm wide alignment tabs centered beneath the base line", 50, 40);
+    }
+  }
+
+  // =========================================================
+  // STEP 23: Project hidden bolt slots to Front View [Steel Blue]
+  // =========================================================
+  if (step >= 22) {
+    float projOffset = 64 * scale;
+    float slotFrontW = 20 * scale;
+    float slotFrontH = 14 * scale;
+
+    float leftSlotCX  = centerX - projOffset;
+    float rightSlotCX = centerX + projOffset;
+
+    boolean show = (step != 22 || (frameCount % 30 < 15));
+    if (show) {
+      stroke(70, 130, 180);
+      strokeWeight(1);
+      drawDashedLine(leftSlotCX - slotFrontW/2, topViewCenterY, leftSlotCX - slotFrontW/2, baseY);
+      drawDashedLine(leftSlotCX + slotFrontW/2, topViewCenterY, leftSlotCX + slotFrontW/2, baseY);
+      drawDashedLine(rightSlotCX - slotFrontW/2, topViewCenterY, rightSlotCX - slotFrontW/2, baseY);
+      drawDashedLine(rightSlotCX + slotFrontW/2, topViewCenterY, rightSlotCX + slotFrontW/2, baseY);
+
+      stroke(70, 130, 180);
+      strokeWeight(2);
+      noFill();
+      drawDottedRect(leftSlotCX - slotFrontW/2, baseY - slotFrontH, slotFrontW, slotFrontH);
+      drawDottedRect(rightSlotCX - slotFrontW/2, baseY - slotFrontH, slotFrontW, slotFrontH);
+    }
+
+    if (step == 22) {
+      drawDimension(rightSlotCX - slotFrontW/2, baseY - slotFrontH - 10, rightSlotCX + slotFrontW/2, baseY - slotFrontH - 10, "20 mm", true, color(70, 130, 180));
+      fill(70, 130, 180);
+      text("Step 23: Project layout bounds to complete 20 × 14 mm hidden lines for base slots", 50, 40);
+    }
+  }
+
+  // =========================================================
+  // STEP 24: Generate 10 mm fastener bores & track projections [Forest Green]
+  // =========================================================
+  if (step >= 23) {
+    float circleOffset = 31 * scale;
+    float circleDia    = 10 * scale;
+    float circleR      = circleDia / 2;
+
+    float leftCircleX  = centerX - circleOffset;
+    float rightCircleX = centerX + circleOffset;
+
+    boolean show = (step != 23 || (frameCount % 30 < 15));
+    if (show) {
+      stroke(34, 139, 34);
+      strokeWeight(2);
+      noFill();
+      ellipse(leftCircleX, topViewCenterY, circleDia, circleDia);
+      ellipse(rightCircleX, topViewCenterY, circleDia, circleDia);
+
+      stroke(34, 139, 34);
+      strokeWeight(1);
+      drawDashedLine(leftCircleX - circleR, topViewCenterY - circleR, leftCircleX - circleR, baseY);
+      drawDashedLine(leftCircleX + circleR, topViewCenterY - circleR, leftCircleX + circleR, baseY);
+      drawDashedLine(rightCircleX - circleR, topViewCenterY - circleR, rightCircleX - circleR, baseY);
+      drawDashedLine(rightCircleX + circleR, topViewCenterY - circleR, rightCircleX + circleR, baseY);
+
+      stroke(34, 139, 34);
+      strokeWeight(2);
+      drawDashedLine(leftCircleX - circleR, finalTopY, leftCircleX - circleR, baseY);
+      drawDashedLine(leftCircleX + circleR, finalTopY, leftCircleX + circleR, baseY);
+      line(rightCircleX - circleR, finalTopY, rightCircleX - circleR, baseY);
+      line(rightCircleX + circleR, finalTopY, rightCircleX + circleR, baseY);
+    }
+
+    if (step == 23) {
+      drawDimension(centerX, topViewCenterY + 45, leftCircleX, topViewCenterY + 45, "31 mm", true, color(34, 139, 34));
+      drawDimension(centerX, topViewCenterY + 45, rightCircleX, topViewCenterY + 45, "31 mm", true, color(34, 139, 34));
+      drawDimension(rightCircleX - circleR, topViewCenterY - 15, rightCircleX + circleR, topViewCenterY - 15, "10 mm", true, color(34, 139, 34));
+      fill(34, 139, 34);
+      text("Step 24: Place 10 mm bolt holes in Top View and align project lines up", 50, 40);
+    }
+  }
+
+  // =========================================================
+  // STEP 25: Add 20x7 mm bolt seat shoulder bosses [Medium Orchid]
+  // =========================================================
+  if (step >= 24) {
+    float circleOffset = 31 * scale;
+    float leftCircleX  = centerX - circleOffset;
+    float rightCircleX = centerX + circleOffset;
+
+    float rectW = 20 * scale;
+    float rectH = 7 * scale;
+    float rectY = baseY - rectH;
+
+    boolean show = (step != 24 || (frameCount % 30 < 15));
+    if (show) {
+      stroke(186, 85, 211);
+      strokeWeight(2);
+      noFill();
+      rect(leftCircleX - rectW/2, rectY, rectW, rectH);
+      rect(rightCircleX - rectW/2, rectY, rectW, rectH);
+    }
+
+    if (step == 24) {
+      drawDimension(leftCircleX - rectW/2, rectY - 10, leftCircleX + rectW/2, rectY - 10, "20 mm", true, color(186, 85, 211));
+      drawDimension(leftCircleX - rectW/2 - 15, rectY, leftCircleX - rectW/2 - 15, baseY, "7 mm", false, color(186, 85, 211));
+      fill(186, 85, 211);
+      text("Step 25: Add 20 × 7 mm spot-face shoulder lines over the lower block assembly", 50, 40);
+    }
+  }
+
+  // =========================================================
+  // STEP 26: Draw keyway reference block at slot base [Light Coral]
+  // =========================================================
+  if (step >= 25) {
+    float sqW    = 6 * scale;
+    float halfSq = sqW / 2;
+    float sqTopY    = arcTopY + slotR;
+    float sqBottomY = sqTopY + 6 * scale;
+    float tipDrop = halfSq * tan(radians(30));
+    float tipY    = sqBottomY + tipDrop;
+
+    boolean show = (step != 25 || (frameCount % 30 < 15));
+    if (show) {
+      stroke(240, 128, 128);
+      strokeWeight(2);
+      drawDashedLine(centerX, sqTopY, centerX - halfSq, sqTopY);
+      drawDashedLine(centerX - halfSq, sqTopY, centerX - halfSq, sqBottomY);
+      drawDashedLine(centerX - halfSq, sqBottomY, centerX, sqBottomY);
+      drawDashedLine(centerX - halfSq, sqBottomY, centerX, tipY);
+
+      stroke(240, 128, 128);
+      strokeWeight(4);
+      line(centerX, sqTopY, centerX + halfSq, sqTopY);
+      line(centerX + halfSq, sqTopY, centerX + halfSq, sqBottomY);
+      line(centerX + halfSq, sqBottomY, centerX, sqBottomY);
+      line(centerX + halfSq, sqBottomY, centerX, tipY);
+
+      stroke(240, 128, 128);
+      strokeWeight(1);
+      drawDashedLine(centerX, sqTopY, centerX, tipY);
+    }
+
+    if (step == 25) {
+      drawDimension(centerX - halfSq, sqTopY - 15, centerX + halfSq, sqTopY - 15, "6 mm", true, color(240, 128, 128));
+      drawDimension(centerX + halfSq + 15, sqTopY, centerX + halfSq + 15, sqBottomY, "6 mm", false, color(240, 128, 128));
+      fill(240, 128, 128);
+      text("Step 26: Draw the 6 mm key reference block touching the lower bearing line", 50, 40);
+    }
+  }
+
+  // =========================================================
+  // STEP 27: Mirror R19 upper bearing liner seat [Medium Spring Green]
+  // =========================================================
+  if (step >= 26) {
+    boolean show = (step != 26 || (frameCount % 30 < 15));
+    if (show) {
+      stroke(0, 250, 154);
+      strokeWeight(3);
+      noFill();
+      arc(centerX, arcTopY, 2 * slotR, 2 * slotR, PI, TWO_PI);
+    }
+
+    if (step == 26) {
+      drawDimension(centerX - slotR, arcTopY - slotR - 15, centerX + slotR, arcTopY - slotR - 15, "19 mm R", true, color(0, 250, 154));
+      fill(0, 250, 154);
+      text("Step 27: Mirror R19 upper semicircle arc to create full inner journal circle", 50, 40);
+    }
+  }
+
+  // =========================================================
+  // STEP 28: Cap clearance steps and vertical shoulders [Gold]
+  // =========================================================
+  if (step >= 27) {
+    float circleCX = centerX;
+    float circleCY = arcTopY;
+    float r = slotR;
+    float riseFromCenter = 6 * scale;
+    float step28Y = circleCY - riseFromCenter;
+    float xOffset = sqrt(r * r - riseFromCenter * riseFromCenter);
+    float leftCirclePtX  = circleCX - xOffset;
+    float rightCirclePtX = circleCX + xOffset;
+    float leftHitX  = innerLeftX;
+    float rightHitX = innerRightX;
+    float blueTopY = step28Y - 12 * scale;
+
+    boolean show = (step != 27 || (frameCount % 30 < 15));
+    if (show) {
+      stroke(255, 215, 0);
+      strokeWeight(4);
+      line(leftCirclePtX, step28Y, leftHitX, step28Y);
+      line(rightCirclePtX, step28Y, rightHitX, step28Y);
+      line(leftHitX, step28Y, leftHitX, blueTopY);
+      line(rightHitX, step28Y, rightHitX, blueTopY);
+    }
+
+    if (step == 27) {
+      drawDimension(circleCX + r + 18, circleCY, circleCX + r + 18, step28Y, "6 mm", false, color(255, 215, 0));
+      drawDimension(rightHitX + 18, step28Y, rightHitX + 18, blueTopY, "12 mm", false, color(255, 215, 0));
+      fill(255, 215, 0);
+      text("Step 28: Trace side horizontal steps from inner liner and step up 12 mm", 50, 40);
+    }
+  }
+
+  // =========================================================
+  // STEP 29: Plot 43 mm top cap flange and offset lines [Royal Blue]
+  // =========================================================
+  if (step >= 28) {
+    float circleCX = centerX;
+    float circleCY = arcTopY;
+    float circleTopY = circleCY - slotR;
+    float newDottedY = circleTopY;
+    float newHalf = 43 * scale;
+    float leftDotX  = circleCX - newHalf;
+    float rightDotX = circleCX + newHalf;
+    float rise10 = 10 * scale;
+    float newBlueTopY = newDottedY - rise10;
+
+    boolean show = (step != 28 || (frameCount % 30 < 15));
+    if (show) {
+      stroke(65, 105, 225);
+      strokeWeight(2);
+      for (float x = leftDotX; x < rightDotX; x += 12) {
+        line(x, newDottedY, min(x + 6, rightDotX), newDottedY);
+      }
+
+      stroke(65, 105, 225);
+      strokeWeight(4);
+      line(leftDotX, newDottedY, leftDotX, newBlueTopY);
+      line(rightDotX, newDottedY, rightDotX, newBlueTopY);
+    }
+
+    if (step == 28) {
+      drawDimension(circleCX, newDottedY - 20, leftDotX, newDottedY - 20, "43 mm", true, color(65, 105, 225));
+      drawDimension(circleCX, newDottedY - 50, rightDotX, newDottedY - 50, "43 mm", true, color(65, 105, 225));
+      drawDimension(rightDotX + 20, newDottedY, rightDotX + 20, newBlueTopY, "10 mm", false, color(65, 105, 225));
+      fill(65, 105, 225);
+      text("Step 29: Draw 43 mm lateral limits and step up 10 mm shoulder lines", 50, 40);
+    }
+  }
+
+  // =========================================================
+  // STEP 30: Outline main R36 body profile envelope [Dark Magenta]
+  // =========================================================
+  if (step >= 29) {
+    boolean show = (step != 29 || (frameCount % 30 < 15));
+    if (show) {
+      stroke(139, 0, 139);
+      strokeWeight(3);
+      noFill();
+      ellipse(centerX, arcTopY, 2 * bigR36, 2 * bigR36);
+
+      fill(139, 0, 139);
+      noStroke();
+      ellipse(centerX, arcTopY, 8, 8);
+    }
+
+    if (step == 29) {
+      drawDimension(centerX, arcTopY - bigR36 - 25, centerX + bigR36, arcTopY - bigR36 - 25, "36 mm R", true, color(139, 0, 139));
+      fill(139, 0, 139);
+      text("Step 30: Project the outer main R36 housing curve from the core center", 50, 40);
+    }
+  }
+
+  // =========================================================
+  // STEP 31: Extend cap corner profiles down to R36 line [Tomato Red]
+  // =========================================================
+  if (step >= 30) {
+    float circleCX = centerX;
+    float circleCY = arcTopY;
+    float R = bigR36;
+    float leftBlueX  = centerX - 43 * scale;
+    float rightBlueX = centerX + 43 * scale;
+    float circleTopY = circleCY - slotR;
+    float leftBlueTopY  = circleTopY - 10 * scale;
+    float rightBlueTopY = circleTopY - 10 * scale;
+    float dx = abs(leftBlueX - circleCX);
+    float yOffset = sqrt(R * R - dx * dx);
+    float leftMeetY  = circleCY - yOffset;
+    float rightMeetY = circleCY - yOffset;
+
+    boolean show = (step != 30 || (frameCount % 30 < 15));
+    if (show) {
+      stroke(255, 99, 71);
+      strokeWeight(4);
+      line(leftBlueX, leftBlueTopY, leftBlueX, leftMeetY);
+      line(rightBlueX, rightBlueTopY, rightBlueX, rightMeetY);
+    }
+
+    if (step == 30) {
+      drawDimension(rightBlueX + 18, rightBlueTopY, rightBlueX + 18, rightMeetY, "to R36", false, color(255, 99, 71));
+      fill(255, 99, 71);
+      text("Step 31: Drop the 43 mm outer flange vertical walls until they intersect R36", 50, 40);
+    }
+  }
+
+  // =========================================================
+  // STEP 32: Connect internal and external step layers [Lime Green]
+  // =========================================================
+  if (step >= 31) {
+    float circleCY = arcTopY;
+    float circleTopY = circleCY - slotR;
+    float top12Y = (circleCY - 6 * scale) - 12 * scale;
+    float top10Y = circleTopY - 10 * scale;
+    float left12X  = innerLeftX;
+    float right12X = innerRightX;
+    float left10X  = centerX - 43 * scale;
+    float right10X = centerX + 43 * scale;
+
+    boolean show = (step != 31 || (frameCount % 30 < 15));
+    if (show) {
+      stroke(50, 205, 50);
+      strokeWeight(4);
+      line(left12X, top12Y, left10X, top12Y);
+      line(right12X, top12Y, right10X, top12Y);
+      line(left10X, top12Y, left10X, top10Y);
+      line(right10X, top12Y, right10X, top10Y);
+    }
+
+    if (step == 31) {
+      drawDimension(left10X, top12Y - 20, left12X, top12Y - 20, "bridge line", true, color(50, 205, 50));
+      drawDimension(right12X, top12Y - 45, right10X, top12Y - 45, "bridge line", true, color(50, 205, 50));
+      fill(50, 205, 50);
+      text("Step 32: Bridge horizontal lines to join the 12 mm and 10 mm structural tiers", 50, 40);
+    }
+  }
+
+  // =========================================================
+  // STEP 33: Synthesize consolidated housing frame [Medium Slate Blue]
+  // =========================================================
+  if (step >= 32) {
+    float circleCX = centerX;
+    float circleCY = arcTopY;
+    float r19 = slotR;
+    float R36 = bigR36;
+    float riseFromCenter = 6 * scale;
+    float step28Y = circleCY - riseFromCenter;
+    float xOffset28 = sqrt(r19 * r19 - riseFromCenter * riseFromCenter);
+    float leftCirclePtX  = circleCX - xOffset28;
+    float rightCirclePtX = circleCX + xOffset28;
+    float leftInnerX  = innerLeftX;
+    float rightInnerX = innerRightX;
+    float top12Y = step28Y - 12 * scale;
+    float circleTopY = circleCY - r19;
+    float top10Y = circleTopY - 10 * scale;
+    float left10X  = circleCX - 43 * scale;
+    float right10X = circleCX + 43 * scale;
+    float dx = abs(left10X - circleCX);
+    float yOffset = sqrt(R36 * R36 - dx * dx);
+    float leftMeetY  = circleCY - yOffset;
+    float rightMeetY = circleCY - yOffset;
+
+    boolean show = (step != 32 || (frameCount % 30 < 15));
+    if (show) {
+      stroke(123, 104, 238);
+      strokeWeight(4);
+      line(leftCirclePtX, step28Y, leftInnerX, step28Y);
+      line(rightCirclePtX, step28Y, rightInnerX, step28Y);
+      line(leftInnerX, step28Y, leftInnerX, top12Y);
+      line(rightInnerX, step28Y, rightInnerX, top12Y);
+      line(leftInnerX, top12Y, left10X, top12Y);
+      line(rightInnerX, top12Y, right10X, top12Y);
+      line(left10X, top12Y, left10X, top10Y);
+      line(right10X, top12Y, right10X, top10Y);
+      line(left10X, top10Y, left10X, leftMeetY);
+      line(right10X, top10Y, right10X, rightMeetY);
+    }
+
+    if (step == 32) {
+      drawDimension(rightInnerX + 20, step28Y, rightInnerX + 20, top12Y, "12 mm", false, color(123, 104, 238));
+      drawDimension(right10X + 35, circleTopY, right10X + 35, top10Y, "10 mm", false, color(123, 104, 238));
+      fill(123, 104, 238);
+      text("Step 33: Link all outer housing profile segments together cleanly", 50, 40);
+    }
+  }
+
+  // =========================================================
+  // STEP 34: Inward horizontal extensions to body cylinder [Chocolate]
+  // =========================================================
+  if (step >= 33) {
+    float circleCX = centerX;
+    float circleCY = arcTopY;
+    float R36 = bigR36;
+    float r19 = slotR;
+    float circleTopY = circleCY - r19;
+    float top10Y = circleTopY - 10 * scale;
+    float left10X  = circleCX - 43 * scale;
+    float right10X = circleCX + 43 * scale;
+    float yFromCenter = top10Y - circleCY;
+    float xOffset = sqrt(R36 * R36 - yFromCenter * yFromCenter);
+    float leftCircleHitX  = circleCX - xOffset;
+    float rightCircleHitX = circleCX + xOffset;
+
+    boolean show = (step != 33 || (frameCount % 30 < 15));
+    if (show) {
+      stroke(210, 105, 30);
+      strokeWeight(4);
+      line(left10X, top10Y, leftCircleHitX, top10Y);
+      line(right10X, top10Y, rightCircleHitX, top10Y);
+    }
+
+    if (step == 33) {
+      drawDimension(left10X, top10Y - 18, leftCircleHitX, top10Y - 18, "to R36", true, color(210, 105, 30));
+      drawDimension(rightCircleHitX, top10Y - 45, right10X, top10Y - 45, "to R36", true, color(210, 105, 30));
+      fill(210, 105, 30);
+      text("Step 34: Extend top tier flange lines inward until they meet the main core barrel", 50, 40);
+    }
+  }
+
+  // =========================================================
+  // STEP 35: Trace fastener projection extensions up to cap [Dark Teal]
+  // =========================================================
+  if (step >= 34) {
+    float circleOffset = 31 * scale;
+    float circleDia    = 10 * scale;
+    float circleR      = circleDia / 2;
+    float leftCircleX  = centerX - circleOffset;
+    float rightCircleX = centerX + circleOffset;
+    float circleTopY = arcTopY - slotR;
+    float projTopY   = circleTopY - 10 * scale;
+
+    boolean show = (step != 34 || (frameCount % 30 < 15));
+    if (show) {
+      stroke(0, 139, 139);
+      strokeWeight(1);
+      drawDashedLine(leftCircleX - circleR, baseY, leftCircleX - circleR, projTopY);
+      drawDashedLine(leftCircleX + circleR, baseY, leftCircleX + circleR, projTopY);
+
+      stroke(0, 139, 139);
+      strokeWeight(3);
+      line(rightCircleX - circleR, baseY, rightCircleX - circleR, projTopY);
+      line(rightCircleX + circleR, baseY, rightCircleX + circleR, projTopY);
+    }
+
+    if (step == 34) {
+      drawDimension(rightCircleX - circleR, projTopY - 20, rightCircleX + circleR, projTopY - 20, "10 mm", true, color(0, 139, 139));
+      fill(0, 139, 139);
+      text("Step 35: Extend fastener projection shafts straight up through cap level", 50, 40);
+    }
+  }
+
+  // =========================================================
+  // STEP 36: Construct 20x8 mm and 20x5 mm lug caps [Dark Orange]
+  // =========================================================
+  if (step >= 35) {
+    float circleOffset = 31 * scale;
+    float leftCircleX  = centerX - circleOffset;
+    float rightCircleX = centerX + circleOffset;
+    float circleTopY = arcTopY - slotR;
+    float projTopY   = circleTopY - 10 * scale;
+    float rectW  = 20 * scale;
+    float rectH1 = 8 * scale;
+    float rectH2 = 5 * scale;
+
+    boolean show = (step != 35 || (frameCount % 30 < 15));
+    if (show) {
+      stroke(255, 140, 0);
+      strokeWeight(2);
+      noFill();
+
+      rect(leftCircleX - rectW/2, projTopY - rectH1, rectW, rectH1);
+      rect(leftCircleX - rectW/2, projTopY - rectH1 - rectH2, rectW, rectH2);
+      rect(rightCircleX - rectW/2, projTopY - rectH1, rectW, rectH1);
+      rect(rightCircleX - rectW/2, projTopY - rectH1 - rectH2, rectW, rectH2);
+    }
+
+    if (step == 35) {
+      drawDimension(rightCircleX - rectW/2, projTopY - rectH1 - rectH2 - 15, rightCircleX + rectW/2, projTopY - rectH1 - rectH2 - 15, "20 mm", true, color(255, 140, 0));
+      drawDimension(rightCircleX + rectW/2 + 10, projTopY, rightCircleX + rectW/2 + 10, projTopY - rectH1, "8 mm", false, color(255, 140, 0));
+      drawDimension(rightCircleX + rectW/2 + 35, projTopY - rectH1, rightCircleX + rectW/2 + 35, projTopY - rectH1 - rectH2, "5 mm", false, color(255, 140, 0));
+      fill(255, 140, 0);
+      text("Step 36: Build stacked fastener lug steps (20 × 8 mm and 20 × 5 mm) on left/right wings", 50, 40);
+    }
+  }
+
+  // =========================================================
+  // STEP 37: Drop housing cap edges down to Top View [Medium Violet Red]
+  // =========================================================
+  if (step >= 36) {
+    float r12 = 12 * scale;
+    boolean show = (step != 36 || (frameCount % 30 < 15));
+    
+    if (show) {
+      stroke(199, 21, 133);
+      strokeWeight(1);
+      drawDashedLine(arcLeftX, arcTopY, arcLeftX, topViewTopY);
+      drawDashedLine(arcRightX, arcTopY, arcRightX, topViewTopY);
+
+      stroke(199, 21, 133);
+      strokeWeight(4);
+
+      if (step >= 37) {
+        line(arcLeftX, topViewTopY, arcLeftX, topViewCenterY - r12);
+        line(arcLeftX, topViewCenterY + r12, arcLeftX, topViewBottomY);
+        line(arcRightX, topViewTopY, arcRightX, topViewCenterY - r12);
+        line(arcRightX, topViewCenterY + r12, arcRightX, topViewBottomY);
+      } else {
+        line(arcLeftX, topViewTopY, arcLeftX, topViewBottomY);
+        line(arcRightX, topViewTopY, arcRightX, topViewBottomY);
+      }
+    }
+
+    if (step == 36) {
+      fill(199, 21, 133);
+      text("Step 37: Drop internal cap reference projection lines directly down to Top View structure", 50, 40);
+    }
+  }
+
+  // =========================================================
+  // STEP 38: Map R12 cylindrical end bosses in Top View [Magenta]
+  // =========================================================
+  if (step >= 37) {
+    float r12 = 12 * scale;
+    
+    boolean show = (step != 37 || (frameCount % 30 < 15));
+    if (show) {
+      stroke(255, 0, 255);
+      strokeWeight(3);
+      noFill();
+
+      arc(arcLeftX, topViewCenterY, 2 * r12, 2 * r12, -HALF_PI, HALF_PI);
+      arc(arcRightX, topViewCenterY, 2 * r12, 2 * r12, HALF_PI, PI + HALF_PI);
+    }
+
+    if (step == 37) {
+      drawDimension(arcLeftX, topViewCenterY + r12 + 15, arcLeftX + r12, topViewCenterY + r12 + 15, "12 mm R", true, color(255, 0, 255));
+      fill(255, 0, 255);
+      text("Step 38: Draw 12 mm radius cylindrical end semicircles onto top view face layers", 50, 40);
+    }
+  }
+
+  // =========================================================
+  // STEP 39: Build R12 inward arc fillets in Front View [Deep Sky Blue]
+  // =========================================================
+  if (step >= 38) {
+    float r12_inward = 12 * scale;
+    float leftArcX = leftPurpleX - r12_inward;
+    float leftArcY = topY - r12_inward;
+    float rightArcX = rightPurpleX + r12_inward;
+    float rightArcY = topY - r12_inward;
+    
+    boolean show = (step != 38 || (frameCount % 30 < 15));
+    if (show) {
+      stroke(0, 191, 255);
+      strokeWeight(4);
+      noFill();
+
+      // Left inward casting fillet (Base flange to main housing block junction)
+      arc(leftArcX, leftArcY, 2 * r12_inward, 2 * r12_inward, 0, HALF_PI);
+
+      // Right inward casting fillet (Base flange to main housing block junction)
+      arc(rightArcX, rightArcY, 2 * r12_inward, 2 * r12_inward, HALF_PI, PI);
+    }
+
+    if (step == 38) {
+      drawDimension(leftPurpleX - r12_inward, topY, leftPurpleX, topY, "12 mm R", true, color(0, 191, 255));
+      fill(0, 191, 255);
+      text("Step 39: Construct 12 mm inward casting fillets between base flange and 55 mm housing body", 50, 40);
+    }
+  }
+
+  // =========================================================
+  // STEP 40: Generate multi-tier internal oil port bore [Olive Drab]
+  // =========================================================
+  if (step >= 39) {
+    float holeTopY = arcTopY - bigR36;
+    float holeMidY = holeTopY + 20 * scale;
+    float holeBottomY = arcTopY - slotR;
+    float w1 = 3 * scale;
+    float w2 = 1.5 * scale;
+
+    boolean show = (step != 39 || (frameCount % 30 < 15));
+    if (show) {
+      stroke(107, 142, 35);
+      strokeWeight(2);
+      drawDashedLine(centerX - w1, holeTopY, centerX - w1, holeMidY);
+      drawDashedLine(centerX + w1, holeTopY, centerX + w1, holeMidY);
+      drawDashedLine(centerX - w1, holeMidY, centerX - w2, holeMidY);
+      drawDashedLine(centerX + w1, holeMidY, centerX + w2, holeMidY);
+      drawDashedLine(centerX - w2, holeMidY, centerX - w2, holeBottomY);
+      drawDashedLine(centerX + w2, holeMidY, centerX + w2, holeBottomY);
+    }
+
+    if (step == 39) {
+      drawDimension(centerX + w1 + 15, holeTopY, centerX + w1 + 15, holeMidY, "20 mm", false, color(107, 142, 35));
+      drawDimension(centerX - w1, holeTopY - 15, centerX + w1, holeTopY - 15, "6 mm", true, color(107, 142, 35));
+      drawDimension(centerX - w2, (holeMidY + holeBottomY)/2, centerX + w2, (holeMidY + holeBottomY)/2, "3 mm", true, color(107, 142, 35));
+      fill(107, 142, 35);
+      text("Step 40: Form multi-tier oil port (6 mm bore to 20 mm depth, then down to 3 mm)", 50, 40);
+    }
+  }
+
+  // =========================================================
+  // STEP 41: Create 30-degree annotations leader line [Dark Sea Green]
+  // =========================================================
+  if (step >= 40) {
+    float holeTopY = arcTopY - bigR36;
+    float angle = radians(30); 
+    float leaderLength = 35 * scale;
+    float endX = centerX + leaderLength * cos(angle);
+    float endY = holeTopY - leaderLength * sin(angle);
+    float tailLength = 20 * scale;
+    float arrowBase = 3 * scale;
+    float arrowWidth = 1.5 * scale;
+
+    boolean show = (step != 40 || (frameCount % 30 < 15));
+    if (show) {
+      stroke(143, 188, 143);
+      strokeWeight(2);
+      line(centerX, holeTopY, endX, endY);
+      line(endX, endY, endX + tailLength, endY);
+      
+      fill(143, 188, 143);
+      noStroke();
+      pushMatrix();
+      translate(centerX, holeTopY);
+      rotate(-angle);
+      triangle(0, 0, arrowBase, -arrowWidth, arrowBase, arrowWidth);
+      popMatrix();
+
+      fill(143, 188, 143);
+      textSize(14);
+      textAlign(LEFT, BOTTOM);
+      text("Oil Hole", endX + 5, endY - 2);
+      textAlign(LEFT, CENTER);
+    }
+
+    if (step == 40) {
+      fill(143, 188, 143);
+      textSize(16);
+      text("Step 41: Anchor 30-degree engineering callout leader line to oil hole entrance", 50, 40);
+    }
+  }
+
+  // =========================================================
+  // STEP 42: Outline M10 bolt head faces & root threads [Dark Slate Blue]
+  // =========================================================
+  if (step >= 41) {
+    float circleOffset = 31 * scale;
+    float leftCircleX  = centerX - circleOffset;
+    float rightCircleX = centerX + circleOffset;
+    float r19 = 19 * scale;
+    float circleTopY = arcTopY - r19;
+    float projTopY   = circleTopY - 10 * scale;
+    float rectH1 = 8 * scale;
+    float headY = projTopY - rectH1;
+    float faceW = 5 * scale; 
+    float minorR = 4 * scale;
+    
+    boolean show = (step != 41 || (frameCount % 30 < 15));
+    if (show) {
+      stroke(72, 61, 139);
+      strokeWeight(2);
+      line(leftCircleX - faceW, headY, leftCircleX - faceW, headY + rectH1);
+      line(leftCircleX + faceW, headY, leftCircleX + faceW, headY + rectH1);
+      line(rightCircleX - faceW, headY, rightCircleX - faceW, headY + rectH1);
+      line(rightCircleX + faceW, headY, rightCircleX + faceW, headY + rectH1);
+
+      stroke(72, 61, 139);
+      strokeWeight(1);
+      drawDashedLine(leftCircleX - minorR, baseY, leftCircleX - minorR, projTopY);
+      drawDashedLine(leftCircleX + minorR, baseY, leftCircleX + minorR, projTopY);
+      drawDashedLine(rightCircleX - minorR, baseY, rightCircleX - minorR, projTopY);
+      drawDashedLine(rightCircleX + minorR, baseY, rightCircleX + minorR, projTopY);
+    }
+
+    if (step == 41) {
+      fill(72, 61, 139);
+      text("Step 42: Layout M10 hexagonal bolt heads (5-10-5 mm layout) and core internal thread run out", 50, 40);
+    }
+  }
+
+  // =========================================================
+  // STEP 43: Complete top down M10 plan view hex profiles [Sandy Brown]
+  // =========================================================
+  if (step >= 42) {
+    float circleOffset = 31 * scale;
+    float leftCircleX  = centerX - circleOffset;
+    float rightCircleX = centerX + circleOffset;
+    float hexR = 10 * scale; 
+    float chamferR = hexR * cos(radians(30)); 
+
+    boolean show = (step != 42 || (frameCount % 30 < 15));
+    if (show) {
+      stroke(244, 164, 96);
+      strokeWeight(2);
+      noFill();
+
+      beginShape();
+      for (int i = 0; i < 6; i++) {
+        float angle = TWO_PI / 6 * i;
+        vertex(leftCircleX + hexR * cos(angle), topViewCenterY + hexR * sin(angle));
+      }
+      endShape(CLOSE);
+
+      beginShape();
+      for (int i = 0; i < 6; i++) {
+        float angle = TWO_PI / 6 * i;
+        vertex(rightCircleX + hexR * cos(angle), topViewCenterY + hexR * sin(angle));
+      }
+      endShape(CLOSE);
+
+      stroke(244, 164, 96);
+      strokeWeight(1);
+      ellipse(leftCircleX, topViewCenterY, chamferR * 2, chamferR * 2);
+      ellipse(rightCircleX, topViewCenterY, chamferR * 2, chamferR * 2);
+    }
+
+    if (step == 42) {
+      drawDimension(rightCircleX, topViewCenterY - hexR - 15, rightCircleX + hexR, topViewCenterY - hexR - 15, "R10", true, color(244, 164, 96));
+      fill(244, 164, 96);
+      text("Step 43: Map circumscribed standard hexagons in Top View for M10 hardware", 50, 40);
+    }
+  }
+
+  // =========================================================
+  // STEP 44: Plot concentric alignment journal circles [Maroon]
+  // =========================================================
+  if (step >= 43) {
+    float cX = centerX;
+    float cY = arcTopY;
+
+    boolean show = (step != 43 || (frameCount % 30 < 15));
+    if (show) {
+      noFill();
+      strokeWeight(2);
+      stroke(128, 0, 0);
+      ellipse(cX, cY, 50 * scale, 50 * scale);
+      ellipse(cX, cY, 38 * scale, 38 * scale);
+      ellipse(cX, cY, 35 * scale, 35 * scale);
+      ellipse(cX, cY, 25 * scale, 25 * scale);
+    }
+
+    if (step == 43) {
+      fill(128, 0, 0);
+      text("Step 44: Finalize core engine concentric circles (diameters: 25, 35, 38, 50 mm)", 50, 40);
+    }
+  }
+
+  // =========================================================
+  // STEP 45: Fillet cap shoulder edges to R6 parameters [Dark Orchid]
+  // =========================================================
+  if (step >= 44) {
+    float r6 = 6 * scale;
+    float rDia = 12 * scale;
+    float leftArcCX = leftPurpleX + r6;
+    float leftArcCY = finalTopY + r6;
+    float rightArcCX = rightPurpleX - r6;
+    float rightArcCY = finalTopY + r6;
+
+    boolean show = (step != 44 || (frameCount % 30 < 15));
+    if (show) {
+      noStroke();
+      fill(255);
+      rect(leftPurpleX - 2, finalTopY - 2, r6 + 4, r6 + 4);
+      rect(rightPurpleX - r6 - 2, finalTopY - 2, r6 + 4, r6 + 4);
+
+      stroke(153, 50, 204);
+      strokeWeight(4);
+      line(leftArcCX, finalTopY, rightArcCX, finalTopY);
+      line(leftPurpleX, firstTopY, leftPurpleX, leftArcCY);
+      line(rightPurpleX, firstTopY, rightPurpleX, rightArcCY);
+
+      noFill();
+      arc(leftArcCX, leftArcCY, rDia, rDia, PI, PI + HALF_PI);
+      arc(rightArcCX, rightArcCY, rDia, rDia, PI + HALF_PI, TWO_PI);
+    }
+
+    if (step == 44) {
+      drawDimension(leftPurpleX - 15, finalTopY - 15, leftArcCX, leftArcCY, "R6", true, color(153, 50, 204));
+      fill(153, 50, 204);
+      text("Step 45: Fillet uppermost exterior cover box steps using a 12 mm window diameter (R6)", 50, 40);
+    }
+  }
+
+  // =========================================================
+  // STEP 46: Draw inner concentric arcs inside bolt seats [Blinking Coral]
+  // =========================================================
+  if (step >= 45) {
+    float circleOffset = 31 * scale;
+    float leftCircleX  = centerX - circleOffset;
+    float rightCircleX = centerX + circleOffset;
+    float arcRadius    = 6 * scale; 
+
+    boolean show = (step != 45 || (frameCount % 30 < 15));
+    if (show) {
+      stroke(235, 90, 90);
+      strokeWeight(3);
+      noFill();
+
+      // Upper structural relief semi-circles mapped over base seats
+      arc(leftCircleX, baseY, 2 * arcRadius, 2 * arcRadius, PI, TWO_PI);
+      arc(rightCircleX, baseY, 2 * arcRadius, 2 * arcRadius, PI, TWO_PI);
+    }
+
+    if (step == 45) {
+      drawDimension(leftCircleX - arcRadius, baseY - 12, leftCircleX + arcRadius, baseY - 12, "R6 Arc", true, color(235, 90, 90));
+      fill(235, 90, 90);
+      text("Step 46: Construct inner semi-circle relief paths safely within spot-face shoulder limits", 50, 40);
+    }
+  }
+}
+
+// =========================================================
+// General Helper Functions
+// =========================================================
+void drawDashedLine(float x1, float y1, float x2, float y2) {
+  float d = dist(x1, y1, x2, y2);
+  int dashes = max(1, int(d / 10));
+  float dx = (x2 - x1) / dashes;
+  float dy = (y2 - y1) / dashes;
+
+  for (int i = 0; i < dashes; i++) {
+    line(x1 + dx * i, y1 + dy * i, x1 + dx * (i + 0.5), y1 + dy * (i + 0.5));
+  }
+}
+
+void drawDottedRect(float x, float y, float w, float h) {
+  drawDashedLine(x, y, x + w, y);
+  drawDashedLine(x, y, x, y + h);
+  drawDashedLine(x + w, y, x + w, y + h);
+  drawDashedLine(x, y + h, x + w, y + h);
+}
+
+void drawDimension(float x1, float y1, float x2, float y2, String label, boolean horizontal, color c) {
+  stroke(c);
+  strokeWeight(1);
+  line(x1, y1, x2, y2);
+  float a = 6;
+
+  if (horizontal) {
+    line(x1, y1, x1 + a, y1 - a);
+    line(x1, y1, x1 + a, y1 + a);
+    line(x2, y2, x2 - a, y2 - a);
+    line(x2, y2, x2 - a, y2 + a);
+    fill(c);
+    text(label, (x1 + x2) / 2 - 25, y1 - 10);
+  } else {
+    line(x1, y1, x1 - a, y1 + a);
+    line(x1, y1, x1 + a, y1 + a);
+    line(x2, y2, x2 - a, y2 - a);
+    line(x2, y2, x2 + a, y2 - a);
+    fill(c);
+    text(label, x1 + 10, (y1 + y2) / 2);
+  }
+}
+
+void mousePressed() {
+  if (step < 45) { // Updated ceiling limit to support Step 46 execution state correctly
+    step++;
+  } else {
+    step = 0;
+  }
+}
