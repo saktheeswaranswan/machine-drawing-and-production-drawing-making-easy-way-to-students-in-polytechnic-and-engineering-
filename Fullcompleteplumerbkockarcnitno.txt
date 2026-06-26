@@ -1,0 +1,1544 @@
+int step = 0;
+float scale = 3.0;
+
+void setup() {
+  size(950, 900);
+  textSize(16);
+  textAlign(LEFT, CENTER);
+}
+
+void draw() {
+  background(255);
+
+  float centerX = width / 2;
+  float baseY   = 520;
+
+  // =========================
+  // Main front-view dimensions
+  // =========================
+  float baseW   = 168 * scale;
+  float sideH   = 14 * scale;
+  float ledgeW  = 4 * scale;
+
+  float topY = baseY - sideH;
+
+  // =========================
+  // Upper purple box construction
+  // =========================
+  float halfPurple = 43 * scale;
+  float upHeight1  = 30 * scale;
+  float upHeight2  = 25 * scale;
+
+  float leftPurpleX  = centerX - halfPurple;
+  float rightPurpleX = centerX + halfPurple;
+  float firstTopY    = topY - upHeight1;
+  float finalTopY    = firstTopY - upHeight2;
+
+  // =========================
+  // Inner green rectangle
+  // =========================
+  float innerHalfW   = 22 * scale;
+  float innerH       = 12 * scale;
+  float innerLeftX   = centerX - innerHalfW;
+  float innerRightX  = centerX + innerHalfW;
+  float innerBottomY = finalTopY + innerH;
+
+  // =========================
+  // Construction line 3 mm below green rectangle
+  // =========================
+  float gapBelowRect = 3 * scale;
+  float dottedY      = innerBottomY + gapBelowRect;
+
+  // =========================
+  // Final semicircular slot
+  // =========================
+  float slotR      = 19 * scale;
+  float slotHalfW  = slotR;
+  float dropH      = 3 * scale;
+
+  float arcLeftX   = centerX - slotHalfW;
+  float arcRightX  = centerX + slotHalfW;
+  float arcTopY    = innerBottomY + dropH;
+  float arcBottomY = arcTopY + slotR;
+
+  // =========================
+  // 36 mm radius from green circle center
+  // =========================
+  float bigR36 = 36 * scale;
+
+  // =========================
+  // Orange rectangle dimensions
+  // =========================
+  float orangeGap    = 8 * scale;
+  float orangeH      = 2 * scale;
+  float orangeLeftX  = centerX - baseW/2 + orangeGap;
+  float orangeRightX = centerX + baseW/2 - orangeGap;
+  float orangeTopY   = baseY - orangeH;
+
+  // =========================================================
+  // TOP VIEW below front view
+  // =========================================================
+  float topViewGap      = 20 * scale;
+  float topViewW        = 168 * scale;
+  float topViewH        = 36 * scale;
+
+  float topViewTopY     = baseY + topViewGap;
+  float topViewBottomY  = topViewTopY + topViewH;
+  float topViewLeftX    = centerX - topViewW / 2;
+  float topViewRightX   = centerX + topViewW / 2;
+  float topViewCenterY  = topViewTopY + topViewH / 2;
+
+  stroke(0);
+  strokeWeight(2);
+
+  // =========================================================
+  // STEP 1: Draw 168 mm base line
+  // =========================================================
+  if (step >= 0) {
+    line(centerX - baseW/2, baseY, centerX + baseW/2, baseY);
+    if (step == 0) {
+      drawDimension(centerX - baseW/2, baseY + 45, centerX + baseW/2, baseY + 45, "168 mm", true);
+      fill(0);
+      text("Step 1: Draw 168 mm base line", 50, 40);
+    }
+  }
+
+  // =========================================================
+  // STEP 2: Mark center point on base line
+  // =========================================================
+  if (step >= 1) {
+    fill(255, 0, 0);
+    noStroke();
+    ellipse(centerX, baseY, 10, 10);
+    if (step == 1) {
+      fill(0);
+      text("Step 2: Mark centre point on base line", 50, 40);
+    }
+  }
+
+  // =========================================================
+  // STEP 3: Draw vertical dotted center line
+  // =========================================================
+  if (step >= 2) {
+    stroke(0);
+    strokeWeight(1);
+    for (float y = 100; y < baseY + 20; y += 18) {
+      line(centerX, y, centerX, y + 9);
+    }
+    if (step == 2) {
+      fill(0);
+      text("Step 3: Draw vertical centre line", 50, 40);
+    }
+  }
+
+  // =========================================================
+  // STEP 4: Draw 14 mm vertical side walls
+  // =========================================================
+  if (step >= 3) {
+    stroke(0);
+    strokeWeight(2);
+    line(centerX - baseW/2, baseY, centerX - baseW/2, topY);
+    line(centerX + baseW/2, baseY, centerX + baseW/2, topY);
+    if (step == 3) {
+      drawDimension(centerX - baseW/2 - 25, baseY, centerX - baseW/2 - 25, topY, "14 mm", false);
+      fill(0);
+      text("Step 4: Draw 14 mm vertical side walls", 50, 40);
+    }
+  }
+
+  // =========================================================
+  // STEP 5: Draw 4 mm inward ledges
+  // =========================================================
+  if (step >= 4) {
+    stroke(0);
+    strokeWeight(2);
+    line(centerX - baseW/2, topY, centerX - baseW/2 + ledgeW, topY);
+    line(centerX + baseW/2, topY, centerX + baseW/2 - ledgeW, topY);
+    if (step == 4) {
+      drawDimension(centerX - baseW/2, topY - 25, centerX - baseW/2 + ledgeW, topY - 25, "4 mm", true);
+      fill(0);
+      text("Step 5: Draw 4 mm inward ledges", 50, 40);
+    }
+  }
+
+  // =========================================================
+  // STEP 6: Draw sloping sides + blue top line
+  // =========================================================
+  if (step >= 5) {
+    stroke(0);
+    strokeWeight(1);
+    line(centerX - baseW/2, baseY, centerX - baseW/2 + ledgeW, topY);
+    line(centerX + baseW/2, baseY, centerX + baseW/2 - ledgeW, topY);
+
+    stroke(0, 0, 255);
+    strokeWeight(3);
+    line(centerX - baseW/2 + ledgeW, topY, centerX + baseW/2 - ledgeW, topY);
+    
+    if (step == 5) {
+      stroke(0);
+      strokeWeight(1);
+      drawDimension(centerX - baseW/2, baseY + 45, centerX + baseW/2, baseY + 45, "168 mm", true);
+      drawDimension(centerX - baseW/2 - 25, baseY, centerX - baseW/2 - 25, topY, "14 mm", false);
+      drawDimension(centerX - baseW/2, topY - 25, centerX - baseW/2 + ledgeW, topY - 25, "4 mm", true);
+      fill(0);
+      text("Step 6: Draw base profile and blue top line", 50, 40);
+    }
+  }
+
+  // =========================================================
+  // STEP 7: Mark 43 mm left and right on blue line
+  // =========================================================
+  if (step >= 6) {
+    fill(150, 0, 200);
+    noStroke();
+    ellipse(leftPurpleX, topY, 8, 8);
+    ellipse(rightPurpleX, topY, 8, 8);
+
+    stroke(0);
+    strokeWeight(1);
+    drawDimension(centerX, topY - 45, leftPurpleX, topY - 45, "43 mm", true);
+    drawDimension(centerX, topY - 75, rightPurpleX, topY - 75, "43 mm", true);
+    
+    if (step == 6) {
+      fill(0);
+      text("Step 7: Mark 43 mm left and right on blue line", 50, 40);
+    }
+  }
+
+  // =========================================================
+  // STEP 8: Draw first 30 mm verticals upward
+  // =========================================================
+  if (step >= 7) {
+    stroke(150, 0, 200);
+    strokeWeight(3);
+    line(leftPurpleX, topY, leftPurpleX, firstTopY);
+    line(rightPurpleX, topY, rightPurpleX, firstTopY);
+
+    fill(150, 0, 200);
+    noStroke();
+    ellipse(leftPurpleX, firstTopY, 8, 8);
+    ellipse(rightPurpleX, firstTopY, 8, 8);
+    
+    if (step == 7) {
+      stroke(0);
+      strokeWeight(1);
+      drawDimension(rightPurpleX + 25, topY, rightPurpleX + 25, firstTopY, "30 mm", false);
+      fill(0);
+      text("Step 8: Draw 30 mm verticals upward", 50, 40);
+    }
+  }
+
+  // =========================================================
+  // STEP 9: Extend both verticals upward by 25 mm
+  // =========================================================
+  if (step >= 8) {
+    stroke(180, 0, 255);
+    strokeWeight(3);
+    line(leftPurpleX, firstTopY, leftPurpleX, finalTopY);
+    line(rightPurpleX, firstTopY, rightPurpleX, finalTopY);
+
+    fill(180, 0, 255);
+    noStroke();
+    ellipse(leftPurpleX, finalTopY, 8, 8);
+    ellipse(rightPurpleX, finalTopY, 8, 8);
+    
+    if (step == 8) {
+      stroke(0);
+      strokeWeight(1);
+      drawDimension(rightPurpleX + 45, firstTopY, rightPurpleX + 45, finalTopY, "25 mm", false);
+      fill(0);
+      text("Step 9: Extend both side verticals upward by 25 mm", 50, 40);
+    }
+  }
+
+  // =========================================================
+  // STEP 10: Draw final straight horizontal top line
+  // =========================================================
+  if (step >= 9) {
+    stroke(180, 0, 255);
+    strokeWeight(4);
+    line(leftPurpleX, finalTopY, rightPurpleX, finalTopY);
+
+    if (step == 9) {
+      fill(0);
+      text("Step 10: Draw straight horizontal top line", 50, 40);
+    }
+  }
+
+  // =========================================================
+  // STEP 11: Show full purple box + total 55 mm
+  // =========================================================
+  if (step >= 10) {
+    stroke(180, 0, 255);
+    strokeWeight(2);
+    line(centerX, baseY, centerX, finalTopY);
+
+    fill(180, 0, 255);
+    noStroke();
+    ellipse(centerX, finalTopY, 8, 8);
+    
+    stroke(0);
+    strokeWeight(1);
+    drawDimension(rightPurpleX + 70, topY, rightPurpleX + 70, finalTopY, "55 mm", false);
+    
+    if (step == 10) {
+      fill(0);
+      text("Step 11: Final purple box with total side height = 55 mm", 50, 40);
+    }
+  }
+
+  // =========================================================
+  // STEP 12: From top centre mark 22 mm left and right
+  // =========================================================
+  if (step >= 11) {
+    stroke(0, 150, 0);
+    strokeWeight(2);
+    line(centerX, finalTopY - 8, centerX, finalTopY + 8);
+
+    fill(0, 150, 0);
+    noStroke();
+    ellipse(innerLeftX, finalTopY, 8, 8);
+    ellipse(innerRightX, finalTopY, 8, 8);
+    
+    if (step == 11) {
+      stroke(0);
+      strokeWeight(1);
+      drawDimension(centerX, finalTopY - 40, innerLeftX, finalTopY - 40, "22 mm", true);
+      drawDimension(centerX, finalTopY - 70, innerRightX, finalTopY - 70, "22 mm", true);
+      fill(0);
+      text("Step 12: Mark 22 mm left and right from top centre of purple box", 50, 40);
+    }
+  }
+
+  // =========================================================
+  // STEP 13: Draw 12 mm verticals downward inside purple box
+  // =========================================================
+  if (step >= 12) {
+    stroke(0, 150, 0);
+    strokeWeight(3);
+    line(innerLeftX, finalTopY, innerLeftX, innerBottomY);
+    line(innerRightX, finalTopY, innerRightX, innerBottomY);
+
+    fill(0, 150, 0);
+    noStroke();
+    ellipse(innerLeftX, innerBottomY, 8, 8);
+    ellipse(innerRightX, innerBottomY, 8, 8);
+    
+    if (step == 12) {
+      stroke(0);
+      strokeWeight(1);
+      drawDimension(innerRightX + 30, finalTopY, innerRightX + 30, innerBottomY, "12 mm", false);
+      fill(0);
+      text("Step 13: Draw 12 mm downward verticals inside purple box", 50, 40);
+    }
+  }
+
+  // =========================================================
+  // STEP 14: Complete 44 x 12 rectangle
+  // =========================================================
+  if (step >= 13) {
+    stroke(0, 150, 0);
+    strokeWeight(3);
+    line(innerLeftX, finalTopY, innerRightX, finalTopY);
+    line(innerLeftX, innerBottomY, innerRightX, innerBottomY);
+
+    if (step == 13) {
+      stroke(0);
+      strokeWeight(1);
+      drawDimension(innerLeftX, innerBottomY + 35, innerRightX, innerBottomY + 35, "44 mm", true);
+      fill(0);
+      text("Step 14: Draw 44 mm × 12 mm inner rectangle", 50, 40);
+    }
+  }
+
+  // =========================================================
+  // STEP 15: Draw 3 mm dotted construction line below rectangle
+  // =========================================================
+  if (step >= 14) {
+    stroke(0, 120, 0);
+    strokeWeight(2);
+    for (float x = innerLeftX; x < innerRightX; x += 12) {
+      line(x, dottedY, min(x + 6, innerRightX), dottedY);
+    }
+
+    if (step == 14) {
+      stroke(0);
+      strokeWeight(1);
+      drawDimension(innerRightX + 30, innerBottomY, innerRightX + 30, dottedY, "3 mm", false);
+      fill(0);
+      text("Step 15: Draw dotted line 3 mm below rectangle", 50, 40);
+    }
+  }
+
+  // =========================================================
+  // STEP 16: Draw final slot exactly like sketch
+  // =========================================================
+  if (step >= 15) {
+    stroke(255);
+    strokeWeight(5);
+    line(innerLeftX, innerBottomY, innerRightX, innerBottomY);
+
+    stroke(0, 150, 0);
+    strokeWeight(3);
+    line(innerLeftX, finalTopY, innerLeftX, innerBottomY);
+    line(innerRightX, finalTopY, innerRightX, innerBottomY);
+    line(innerLeftX, finalTopY, innerRightX, finalTopY);
+
+    float leftStepEndX  = arcLeftX;
+    float rightStepEndX = arcRightX;
+
+    line(innerLeftX, innerBottomY, leftStepEndX, innerBottomY);
+    line(rightStepEndX, innerBottomY, innerRightX, innerBottomY);
+
+    line(arcLeftX, innerBottomY, arcLeftX, arcTopY);
+    line(arcRightX, innerBottomY, arcRightX, arcTopY);
+
+    stroke(0, 120, 0);
+    strokeWeight(3);
+    noFill();
+    arc(centerX, arcTopY, 2 * slotR, 2 * slotR, 0, PI);
+
+    if (step == 15) {
+      stroke(0);
+      strokeWeight(1);
+      drawDimension(arcRightX + 35, arcTopY, arcRightX + 35, arcBottomY, "19 mm", false);
+      fill(0);
+      text("Step 16: Trim rectangle bottom, draw side drops and semicircle R19", 50, 40);
+    }
+  }
+
+  // =========================================================
+  // STEP 17: Draw top view below front view
+  // =========================================================
+  if (step >= 16) {
+    stroke(0);
+    strokeWeight(1);
+    line(centerX - baseW/2, baseY, centerX - baseW/2, topViewTopY);
+    line(centerX + baseW/2, baseY, centerX + baseW/2, topViewTopY);
+
+    for (float y = baseY + 8; y < topViewBottomY; y += 18) {
+      line(centerX, y, min(centerX, centerX), min(y + 9, topViewBottomY));
+    }
+    
+    stroke(0);
+    strokeWeight(2);
+    fill(255);
+    rect(topViewLeftX, topViewTopY, topViewW, topViewH);
+
+    if (step == 16) {
+      stroke(0);
+      strokeWeight(1);
+      drawDimension(topViewLeftX, topViewBottomY + 35, topViewRightX, topViewBottomY + 35, "168 mm", true);
+      drawDimension(topViewRightX + 35, topViewTopY, topViewRightX + 35, topViewBottomY, "36 mm", false);
+      drawDimension(topViewLeftX - 35, baseY, topViewLeftX - 35, topViewTopY, "20 mm", false);
+      fill(0);
+      text("Step 17: Project centre line down and draw top view rectangle 168 mm × 36 mm", 50, 40);
+    }
+  }
+
+  // =========================================================
+  // STEP 18: Horizontal dotted line & grey arcs in Top View
+  // =========================================================
+  if (step >= 17) {
+    stroke(0);
+    strokeWeight(1);
+    for (float x = topViewLeftX + 5; x < topViewRightX; x += 18) {
+      line(x, topViewCenterY, min(x + 9, topViewRightX), topViewCenterY);
+    }
+
+    clip(int(topViewLeftX), int(topViewTopY), int(topViewW), int(topViewH));
+    stroke(150);
+    strokeWeight(2);
+    noFill();
+    
+    float arcRadius = 43 * scale;
+    ellipse(centerX, topViewCenterY, arcRadius * 2, arcRadius * 2);
+    noClip();
+
+    if (step == 17) {
+      stroke(0);
+      strokeWeight(1);
+      drawDimension(centerX, topViewCenterY - 12, centerX + arcRadius, topViewCenterY - 12, "43 mm", true);
+      fill(0);
+      text("Step 18: Draw horizontal centre dotted line and 43 mm grey arcs", 50, 40);
+    }
+  }
+
+  // =========================================================
+  // STEP 19: Red dot at centre & two 8x10 rectangles at 64mm
+  // =========================================================
+  if (step >= 18) {
+    fill(255, 0, 0);
+    noStroke();
+    ellipse(centerX, topViewCenterY, 8, 8);
+
+    float rectOffset = 64 * scale;
+    float rectW      = 8 * scale;
+    float rectH      = 10 * scale;
+
+    stroke(0);
+    strokeWeight(2);
+    noFill();
+    
+    rect(centerX - rectOffset - rectW/2, topViewCenterY - rectH/2, rectW, rectH);
+    rect(centerX + rectOffset - rectW/2, topViewCenterY - rectH/2, rectW, rectH);
+
+    if (step == 18) {
+      stroke(0);
+      strokeWeight(1);
+      drawDimension(centerX, topViewCenterY + 30, centerX - rectOffset, topViewCenterY + 30, "64 mm", true);
+      drawDimension(centerX, topViewCenterY + 30, centerX + rectOffset, topViewCenterY + 30, "64 mm", true);
+      drawDimension(centerX - rectOffset - rectW/2, topViewCenterY - 20, centerX - rectOffset + rectW/2, topViewCenterY - 20, "8 mm", true);
+      drawDimension(centerX + rectOffset + rectW/2 + 10, topViewCenterY - rectH/2, centerX + rectOffset + rectW/2 + 10, topViewCenterY + rectH/2, "10 mm", false);
+      fill(0);
+      text("Step 19: Draw center red dot and two 8x10 mm rectangles at 64 mm left and right", 50, 40);
+    }
+  }
+
+  // =========================================================
+  // STEP 20: 5 mm radius semicircles on the 8x10 rectangles
+  // =========================================================
+  if (step >= 19) {
+    float rectOffset = 64 * scale;
+    float rectW      = 8 * scale;
+    float r          = 5 * scale;
+
+    float leftSlotCX  = centerX - rectOffset;
+    float rightSlotCX = centerX + rectOffset;
+
+    stroke(255);
+    strokeWeight(4);
+    line(leftSlotCX - rectW/2, topViewCenterY - r + 1, leftSlotCX - rectW/2, topViewCenterY + r - 1);
+    line(leftSlotCX + rectW/2, topViewCenterY - r + 1, leftSlotCX + rectW/2, topViewCenterY + r - 1);
+    line(rightSlotCX - rectW/2, topViewCenterY - r + 1, rightSlotCX - rectW/2, topViewCenterY + r - 1);
+    line(rightSlotCX + rectW/2, topViewCenterY - r + 1, rightSlotCX + rectW/2, topViewCenterY + r - 1);
+
+    stroke(0);
+    strokeWeight(2);
+    noFill();
+
+    arc(leftSlotCX - rectW/2, topViewCenterY, 2*r, 2*r, HALF_PI, PI + HALF_PI);
+    arc(leftSlotCX + rectW/2, topViewCenterY, 2*r, 2*r, -HALF_PI, HALF_PI);
+    arc(rightSlotCX - rectW/2, topViewCenterY, 2*r, 2*r, HALF_PI, PI + HALF_PI);
+    arc(rightSlotCX + rectW/2, topViewCenterY, 2*r, 2*r, -HALF_PI, HALF_PI);
+
+    line(leftSlotCX - rectW/2, topViewCenterY - r, leftSlotCX + rectW/2, topViewCenterY - r);
+    line(leftSlotCX - rectW/2, topViewCenterY + r, leftSlotCX + rectW/2, topViewCenterY + r);
+    line(rightSlotCX - rectW/2, topViewCenterY - r, rightSlotCX + rectW/2, topViewCenterY - r);
+    line(rightSlotCX - rectW/2, topViewCenterY + r, rightSlotCX + rectW/2, topViewCenterY + r);
+
+    if (step == 19) {
+      stroke(0);
+      strokeWeight(1);
+      drawDimension(rightSlotCX + rectW/2 + 3, topViewCenterY, rightSlotCX + rectW/2 + r + 20, topViewCenterY, "R5", true);
+      fill(0);
+      text("Step 20: Draw 5 mm radius semicircles on the 10 mm sides to complete slotted holes", 50, 40);
+    }
+  }
+
+  // =========================================================
+  // STEP 21: Orange Rectangle
+  // =========================================================
+  if (step >= 20) {
+    stroke(255, 128, 0);
+    strokeWeight(2);
+    noFill();
+
+    line(orangeLeftX, baseY, orangeLeftX, orangeTopY);
+    line(orangeRightX, baseY, orangeRightX, orangeTopY);
+    line(orangeLeftX, orangeTopY, orangeRightX, orangeTopY);
+
+    if (step == 20) {
+      stroke(0);
+      strokeWeight(1);
+      drawDimension(centerX - baseW/2, baseY - 5, orangeLeftX, baseY - 5, "8 mm", true);
+      drawDimension(orangeRightX, baseY - 5, centerX + baseW/2, baseY - 5, "8 mm", true);
+      drawDimension(orangeRightX + 15, baseY, orangeRightX + 15, orangeTopY, "2 mm", false);
+      fill(0);
+      text("Step 21: Draw 2 mm high orange rectangle 8 mm inward from the base corners", 50, 40);
+    }
+  }
+
+  // =========================================================
+  // STEP 22: Two symmetrical rectangles below the base line
+  // =========================================================
+  if (step >= 21) {
+    float botOffset = 8 * scale;
+    float botW      = 2 * scale;
+    float botH      = 2 * scale;
+
+    stroke(0, 150, 150);
+    strokeWeight(2);
+    noFill();
+
+    rect(centerX - botOffset - botW, baseY, botW, botH);
+    rect(centerX + botOffset, baseY, botW, botH);
+
+    if (step == 21) {
+      stroke(0);
+      strokeWeight(1);
+      drawDimension(centerX, baseY + 12, centerX + botOffset, baseY + 12, "8 mm", true);
+      drawDimension(centerX + botOffset, baseY + 24, centerX + botOffset + botW, baseY + 24, "2 mm", true);
+      fill(0);
+      text("Step 22: Draw two 2 mm wide rectangles below the base line, starting 8 mm from the centre", 50, 40);
+    }
+  }
+
+  // =========================================================
+  // STEP 23: Project slots to front view as 20x14 dotted rectangles
+  // =========================================================
+  if (step >= 22) {
+    float projOffset = 64 * scale;
+    float slotFrontW = 20 * scale;
+    float slotFrontH = 14 * scale;
+
+    float leftSlotCX  = centerX - projOffset;
+    float rightSlotCX = centerX + projOffset;
+
+    stroke(120);
+    strokeWeight(1);
+
+    drawDashedLine(leftSlotCX - slotFrontW/2, topViewCenterY, leftSlotCX - slotFrontW/2, baseY);
+    drawDashedLine(leftSlotCX + slotFrontW/2, topViewCenterY, leftSlotCX + slotFrontW/2, baseY);
+    drawDashedLine(rightSlotCX - slotFrontW/2, topViewCenterY, rightSlotCX - slotFrontW/2, baseY);
+    drawDashedLine(rightSlotCX + slotFrontW/2, topViewCenterY, rightSlotCX + slotFrontW/2, baseY);
+
+    stroke(0);
+    strokeWeight(2);
+    noFill();
+
+    drawDottedRect(leftSlotCX - slotFrontW/2, baseY - slotFrontH, slotFrontW, slotFrontH);
+    drawDottedRect(rightSlotCX - slotFrontW/2, baseY - slotFrontH, slotFrontW, slotFrontH);
+
+    if (step == 22) {
+      stroke(0);
+      strokeWeight(1);
+      drawDimension(rightSlotCX - slotFrontW/2, baseY - slotFrontH - 10, rightSlotCX + slotFrontW/2, baseY - slotFrontH - 10, "20 mm", true);
+      fill(0);
+      text("Step 23: Project slots to the front view and draw 20x14 mm dotted rectangles", 50, 40);
+    }
+  }
+
+  // =========================================================
+  // STEP 24: Draw 10 mm dia circles at 31 mm from center & project
+  // =========================================================
+  if (step >= 23) {
+    float circleOffset = 31 * scale;
+    float circleDia    = 10 * scale;
+    float circleR      = circleDia / 2;
+
+    float leftCircleX  = centerX - circleOffset;
+    float rightCircleX = centerX + circleOffset;
+
+    stroke(0);
+    strokeWeight(2);
+    noFill();
+    ellipse(leftCircleX, topViewCenterY, circleDia, circleDia);
+    ellipse(rightCircleX, topViewCenterY, circleDia, circleDia);
+
+    stroke(120);
+    strokeWeight(1);
+    drawDashedLine(leftCircleX - circleR, topViewCenterY - circleR, leftCircleX - circleR, baseY);
+    drawDashedLine(leftCircleX + circleR, topViewCenterY - circleR, leftCircleX + circleR, baseY);
+    drawDashedLine(rightCircleX - circleR, topViewCenterY - circleR, rightCircleX - circleR, baseY);
+    drawDashedLine(rightCircleX + circleR, topViewCenterY - circleR, rightCircleX + circleR, baseY);
+
+    stroke(0);
+    strokeWeight(2);
+    
+    drawDashedLine(leftCircleX - circleR, finalTopY, leftCircleX - circleR, baseY);
+    drawDashedLine(leftCircleX + circleR, finalTopY, leftCircleX + circleR, baseY);
+
+    line(rightCircleX - circleR, finalTopY, rightCircleX - circleR, baseY);
+    line(rightCircleX + circleR, finalTopY, rightCircleX + circleR, baseY);
+
+    if (step == 23) {
+      stroke(0);
+      strokeWeight(1);
+      drawDimension(centerX, topViewCenterY + 45, leftCircleX, topViewCenterY + 45, "31 mm", true);
+      drawDimension(centerX, topViewCenterY + 45, rightCircleX, topViewCenterY + 45, "31 mm", true);
+      drawDimension(rightCircleX - circleR, topViewCenterY - 15, rightCircleX + circleR, topViewCenterY - 15, "10 mm", true);
+      fill(0);
+      text("Step 24: Draw 10 mm dia circles in Top View and project to Front View", 50, 40);
+    }
+  }
+
+  // =========================================================
+  // STEP 25: Dark Green Rectangles at Base Over 168mm Line
+  // =========================================================
+  if (step >= 24) {
+    float circleOffset = 31 * scale;
+    float leftCircleX  = centerX - circleOffset;
+    float rightCircleX = centerX + circleOffset;
+
+    float rectW = 20 * scale;
+    float rectH = 7 * scale;
+    float rectY = baseY - rectH;
+
+    stroke(0, 100, 0);
+    strokeWeight(2);
+    noFill();
+
+    rect(leftCircleX - rectW/2, rectY, rectW, rectH);
+    rect(rightCircleX - rectW/2, rectY, rectW, rectH);
+
+    if (step == 24) {
+      stroke(0);
+      strokeWeight(1);
+      drawDimension(leftCircleX - rectW/2, rectY - 10, leftCircleX + rectW/2, rectY - 10, "20 mm", true);
+      drawDimension(leftCircleX - rectW/2 - 15, rectY, leftCircleX - rectW/2 - 15, baseY, "7 mm", false);
+      fill(0);
+      text("Step 25: Draw 20x7 mm dark green rectangles over the base line", 50, 40);
+    }
+  }
+
+  // =========================================================
+  // STEP 26: 6 mm square touching the semicircle outside
+  // =========================================================
+  if (step >= 25) {
+    float sqW    = 6 * scale;
+    float halfSq = sqW / 2;
+
+    float sqTopY    = arcTopY + slotR;
+    float sqBottomY = sqTopY + 6 * scale;
+
+    float tipDrop = halfSq * tan(radians(30));
+    float tipY    = sqBottomY + tipDrop;
+
+    stroke(255, 0, 0);
+    strokeWeight(2);
+    drawDashedLine(centerX, sqTopY, centerX - halfSq, sqTopY);
+    drawDashedLine(centerX - halfSq, sqTopY, centerX - halfSq, sqBottomY);
+    drawDashedLine(centerX - halfSq, sqBottomY, centerX, sqBottomY);
+    drawDashedLine(centerX - halfSq, sqBottomY, centerX, tipY);
+
+    stroke(255, 0, 0);
+    strokeWeight(4);
+    line(centerX, sqTopY, centerX + halfSq, sqTopY);
+    line(centerX + halfSq, sqTopY, centerX + halfSq, sqBottomY);
+    line(centerX + halfSq, sqBottomY, centerX, sqBottomY);
+    line(centerX + halfSq, sqBottomY, centerX, tipY);
+
+    stroke(255, 0, 0);
+    strokeWeight(1);
+    drawDashedLine(centerX, sqTopY, centerX, tipY);
+
+    if (step == 25) {
+      stroke(0);
+      strokeWeight(1);
+      drawDimension(centerX - halfSq, sqTopY - 15, centerX + halfSq, sqTopY - 15, "6 mm", true);
+      drawDimension(centerX + halfSq + 15, sqTopY, centerX + halfSq + 15, sqBottomY, "6 mm", false);
+      fill(0);
+      text("Step 26: Base of the 6 mm red square touching the green semicircle", 50, 40);
+    }
+  }
+
+  // =========================================================
+  // STEP 27: Draw upward semicircle with R19
+  // =========================================================
+  if (step >= 26) {
+    stroke(0, 120, 0);
+    strokeWeight(3);
+    noFill();
+
+    arc(centerX, arcTopY, 2 * slotR, 2 * slotR, PI, TWO_PI);
+    
+    if (step == 26) {
+      stroke(0);
+      strokeWeight(1);
+      drawDimension(centerX - slotR, arcTopY - slotR - 15, centerX + slotR, arcTopY - slotR - 15, "19 mm R", true);
+      fill(0);
+      text("Step 27: Draw upward semicircle (R19) to create a full circle", 50, 40);
+    }
+  }
+
+  // =========================================================
+  // STEP 28: Draw dark blue horizontals from circle to green verticals,
+  // then rise 12 mm upward
+  // =========================================================
+  if (step >= 27) {
+    float circleCX = centerX;
+    float circleCY = arcTopY;
+    float r = slotR;
+
+    float riseFromCenter = 6 * scale;
+    float step28Y = circleCY - riseFromCenter;
+
+    float xOffset = sqrt(r * r - riseFromCenter * riseFromCenter);
+    
+    float leftCirclePtX  = circleCX - xOffset;
+    float rightCirclePtX = circleCX + xOffset;
+
+    float leftHitX  = innerLeftX;
+    float rightHitX = innerRightX;
+
+    float blueTopY = step28Y - 12 * scale;
+
+    stroke(0, 0, 139);
+    strokeWeight(4);
+    
+    line(leftCirclePtX, step28Y, leftHitX, step28Y);
+    line(rightCirclePtX, step28Y, rightHitX, step28Y);
+
+    line(leftHitX, step28Y, leftHitX, blueTopY);
+    line(rightHitX, step28Y, rightHitX, blueTopY);
+
+    if (step == 27) {
+      stroke(0);
+      strokeWeight(1);
+      drawDimension(circleCX + r + 18, circleCY, circleCX + r + 18, step28Y, "6 mm", false);
+      drawDimension(rightHitX + 18, step28Y, rightHitX + 18, blueTopY, "12 mm", false);
+      
+      fill(0);
+      text("Step 28: Draw dark blue horizontals from circle to green verticals, then rise 12 mm upward", 50, 40);
+    }
+  }
+
+  // =========================================================
+  // STEP 29: Above 19 mm circle draw dotted line 43 mm left/right
+  // and raise dark blue corner lines by 10 mm
+  // =========================================================
+  if (step >= 28) {
+    float circleCX = centerX;
+    float circleCY = arcTopY;
+
+    float circleTopY = circleCY - slotR;
+    float newDottedY = circleTopY;
+
+    float newHalf = 43 * scale;
+    float leftDotX  = circleCX - newHalf;
+    float rightDotX = circleCX + newHalf;
+
+    float rise10 = 10 * scale;
+    float newBlueTopY = newDottedY - rise10;
+
+    stroke(80);
+    strokeWeight(2);
+    for (float x = leftDotX; x < rightDotX; x += 12) {
+      line(x, newDottedY, min(x + 6, rightDotX), newDottedY);
+    }
+
+    stroke(0, 0, 139);
+    strokeWeight(4);
+    line(leftDotX, newDottedY, leftDotX, newBlueTopY);
+    line(rightDotX, newDottedY, rightDotX, newBlueTopY);
+
+    if (step == 28) {
+      stroke(0);
+      strokeWeight(1);
+      
+      drawDimension(circleCX, newDottedY - 20, leftDotX, newDottedY - 20, "43 mm", true);
+      drawDimension(circleCX, newDottedY - 50, rightDotX, newDottedY - 50, "43 mm", true);
+      drawDimension(rightDotX + 20, newDottedY, rightDotX + 20, newBlueTopY, "10 mm", false);
+      
+      fill(0);
+      text("Step 29: Draw dotted line 43 mm left/right above R19 circle and raise dark blue corners by 10 mm", 50, 40);
+    }
+  }
+
+  // =========================================================
+  // STEP 30: From green circle centre draw R36 circle
+  // =========================================================
+  if (step >= 29) {
+    stroke(0, 160, 0);
+    strokeWeight(3);
+    noFill();
+
+    ellipse(centerX, arcTopY, 2 * bigR36, 2 * bigR36);
+    
+    fill(0, 160, 0);
+    noStroke();
+    ellipse(centerX, arcTopY, 8, 8);
+
+    if (step == 29) {
+      stroke(0);
+      strokeWeight(1);
+      drawDimension(centerX, arcTopY - bigR36 - 25, centerX + bigR36, arcTopY - bigR36 - 25, "36 mm R", true);
+      
+      fill(0);
+      text("Step 30: From the green circle centre draw a 36 mm radius circle", 50, 40);
+    }
+  }
+
+  // =========================================================
+  // STEP 31: Extend dark blue corner lines down till they touch R36 circle
+  // =========================================================
+  if (step >= 30) {
+    float circleCX = centerX;
+    float circleCY = arcTopY;
+    float R = bigR36;
+
+    float leftBlueX  = centerX - 43 * scale;
+    float rightBlueX = centerX + 43 * scale;
+
+    float circleTopY = circleCY - slotR;
+    float leftBlueTopY  = circleTopY - 10 * scale;
+    float rightBlueTopY = circleTopY - 10 * scale;
+
+    float dx = abs(leftBlueX - circleCX);
+    float yOffset = sqrt(R * R - dx * dx);
+
+    float leftMeetY  = circleCY - yOffset;
+    float rightMeetY = circleCY - yOffset;
+
+    stroke(0, 0, 139);
+    strokeWeight(4);
+    line(leftBlueX, leftBlueTopY, leftBlueX, leftMeetY);
+    line(rightBlueX, rightBlueTopY, rightBlueX, rightMeetY);
+
+    if (step == 30) {
+      stroke(0);
+      strokeWeight(1);
+      drawDimension(rightBlueX + 18, rightBlueTopY, rightBlueX + 18, rightMeetY, "to R36", false);
+      
+      fill(0);
+      text("Step 31: Extend dark blue corner lines down till they touch the R36 circle", 50, 40);
+    }
+  }
+
+  // =========================================================
+  // STEP 32: Join top of 12 mm blue verticals to the TOP of the 10 mm blue verticals
+  // =========================================================
+  if (step >= 31) {
+    float circleCY = arcTopY;
+    float circleTopY = circleCY - slotR;
+
+    float top12Y = (circleCY - 6 * scale) - 12 * scale;
+    float top10Y = circleTopY - 10 * scale;
+
+    float left12X  = innerLeftX;
+    float right12X = innerRightX;
+
+    float left10X  = centerX - 43 * scale;
+    float right10X = centerX + 43 * scale;
+
+    stroke(0, 0, 139);
+    strokeWeight(4);
+    
+    line(left12X, top12Y, left10X, top12Y);
+    line(right12X, top12Y, right10X, top12Y);
+
+    line(left10X, top12Y, left10X, top10Y);
+    line(right10X, top12Y, right10X, top10Y);
+
+    if (step == 31) {
+      stroke(0);
+      strokeWeight(1);
+      drawDimension(left10X, top12Y - 20, left12X, top12Y - 20, "join to 10 mm vertical", true);
+      drawDimension(right12X, top12Y - 45, right10X, top12Y - 45, "join to 10 mm vertical", true);
+      
+      fill(0);
+      text("Step 32: Join the top corners of the 12 mm blue verticals to the 10 mm blue verticals", 50, 40);
+    }
+  }
+
+  // =========================================================
+  // STEP 33: FULL dark-blue profile
+  // =========================================================
+  if (step >= 32) {
+    float circleCX = centerX;
+    float circleCY = arcTopY;
+    float r19 = slotR;
+    float R36 = bigR36;
+
+    float riseFromCenter = 6 * scale;
+    float step28Y = circleCY - riseFromCenter;
+    float xOffset28 = sqrt(r19 * r19 - riseFromCenter * riseFromCenter);
+    
+    float leftCirclePtX  = circleCX - xOffset28;
+    float rightCirclePtX = circleCX + xOffset28;
+
+    float leftInnerX  = innerLeftX;
+    float rightInnerX = innerRightX;
+
+    float top12Y = step28Y - 12 * scale;
+
+    float circleTopY = circleCY - r19;
+    float top10Y = circleTopY - 10 * scale;
+
+    float left10X  = circleCX - 43 * scale;
+    float right10X = circleCX + 43 * scale;
+
+    float dx = abs(left10X - circleCX);
+    float yOffset = sqrt(R36 * R36 - dx * dx);
+
+    float leftMeetY  = circleCY - yOffset;
+    float rightMeetY = circleCY - yOffset;
+
+    stroke(0, 0, 139);
+    strokeWeight(4);
+    
+    line(leftCirclePtX, step28Y, leftInnerX, step28Y);
+    line(rightCirclePtX, step28Y, rightInnerX, step28Y);
+
+    line(leftInnerX, step28Y, leftInnerX, top12Y);
+    line(rightInnerX, step28Y, rightInnerX, top12Y);
+
+    line(leftInnerX, top12Y, left10X, top12Y);
+    line(rightInnerX, top12Y, right10X, top12Y);
+
+    line(left10X, top12Y, left10X, top10Y);
+    line(right10X, top12Y, right10X, top10Y);
+
+    line(left10X, top10Y, left10X, leftMeetY);
+    line(right10X, top10Y, right10X, rightMeetY);
+
+    if (step == 32) {
+      stroke(0);
+      strokeWeight(1);
+      
+      drawDimension(rightInnerX + 20, step28Y, rightInnerX + 20, top12Y, "12 mm", false);
+      drawDimension(right10X + 35, circleTopY, right10X + 35, top10Y, "10 mm", false);
+      
+      fill(0);
+      text("Step 33: Complete final dark-blue profile with 12 mm top corners joining the 10 mm blue verticals", 50, 40);
+    }
+  }
+
+  // =========================================================
+  // STEP 34: Extend top dark-blue horizontals inward till R36 circle
+  // =========================================================
+  if (step >= 33) {
+    float circleCX = centerX;
+    float circleCY = arcTopY;
+    float R36 = bigR36;
+    float r19 = slotR;
+
+    float circleTopY = circleCY - r19;
+    float top10Y = circleTopY - 10 * scale;
+
+    float left10X  = circleCX - 43 * scale;
+    float right10X = circleCX + 43 * scale;
+
+    float yFromCenter = top10Y - circleCY;
+    float xOffset = sqrt(R36 * R36 - yFromCenter * yFromCenter);
+
+    float leftCircleHitX  = circleCX - xOffset;
+    float rightCircleHitX = circleCX + xOffset;
+
+    stroke(0, 0, 139);
+    strokeWeight(4);
+    
+    line(left10X, top10Y, leftCircleHitX, top10Y);
+    line(right10X, top10Y, rightCircleHitX, top10Y);
+
+    if (step == 33) {
+      stroke(0);
+      strokeWeight(1);
+      
+      drawDimension(left10X, top10Y - 18, leftCircleHitX, top10Y - 18, "to R36", true);
+      drawDimension(rightCircleHitX, top10Y - 45, right10X, top10Y - 45, "to R36", true);
+      
+      fill(0);
+      text("Step 34: Extend the top dark-blue horizontal lines inward till they touch the R36 circle", 50, 40);
+    }
+  }
+
+  // =========================================================
+  // STEP 35: Extend Step 24 projected circle lines upward
+  // =========================================================
+  if (step >= 34) {
+    float circleOffset = 31 * scale;
+    float circleDia    = 10 * scale;
+    float circleR      = circleDia / 2;
+
+    float leftCircleX  = centerX - circleOffset;
+    float rightCircleX = centerX + circleOffset;
+
+    float circleTopY = arcTopY - slotR;
+    float projTopY   = circleTopY - 10 * scale;
+
+    stroke(120);
+    strokeWeight(1);
+    drawDashedLine(leftCircleX - circleR, baseY, leftCircleX - circleR, projTopY);
+    drawDashedLine(leftCircleX + circleR, baseY, leftCircleX + circleR, projTopY);
+
+    stroke(0);
+    strokeWeight(3);
+    line(rightCircleX - circleR, baseY, rightCircleX - circleR, projTopY);
+    line(rightCircleX + circleR, baseY, rightCircleX + circleR, projTopY);
+
+    if (step == 34) {
+      stroke(0);
+      strokeWeight(1);
+      drawDimension(rightCircleX - circleR, projTopY - 20, rightCircleX + circleR, projTopY - 20, "10 mm", true);
+      fill(0);
+      text("Step 35: Extend Step 24 projected circle lines upward till the upper dark-blue level — left hidden, right visible", 50, 40);
+    }
+  }
+
+  // =========================================================
+  // STEP 36: Two stacked rectangles (20x8 mm and 20x5 mm) on both sides
+  // =========================================================
+  if (step >= 35) {
+    float circleOffset = 31 * scale;
+    float leftCircleX  = centerX - circleOffset;
+    float rightCircleX = centerX + circleOffset;
+
+    float circleTopY = arcTopY - slotR;
+    float projTopY   = circleTopY - 10 * scale;
+
+    float rectW  = 20 * scale;
+    float rectH1 = 8 * scale;
+    float rectH2 = 5 * scale;
+
+    stroke(0);
+    strokeWeight(2);
+    noFill();
+
+    // Left Side Stack
+    rect(leftCircleX - rectW/2, projTopY - rectH1, rectW, rectH1);
+    rect(leftCircleX - rectW/2, projTopY - rectH1 - rectH2, rectW, rectH2);
+
+    // Right Side Stack
+    rect(rightCircleX - rectW/2, projTopY - rectH1, rectW, rectH1);
+    rect(rightCircleX - rectW/2, projTopY - rectH1 - rectH2, rectW, rectH2);
+
+    if (step == 35) {
+      stroke(0);
+      strokeWeight(1);
+      drawDimension(rightCircleX - rectW/2, projTopY - rectH1 - rectH2 - 15, rightCircleX + rectW/2, projTopY - rectH1 - rectH2 - 15, "20 mm", true);
+      drawDimension(rightCircleX + rectW/2 + 10, projTopY, rightCircleX + rectW/2 + 10, projTopY - rectH1, "8 mm", false);
+      drawDimension(rightCircleX + rectW/2 + 35, projTopY - rectH1, rightCircleX + rectW/2 + 35, projTopY - rectH1 - rectH2, "5 mm", false);
+      
+      fill(0);
+      text("Step 36: Draw two stacked rectangles (20x8 mm and 20x5 mm) extending 13 mm upward on both sides", 50, 40);
+    }
+  }
+
+  // =========================================================
+  // STEP 37: Project corners to Top View as red lines (trimmed in Step 38)
+  // =========================================================
+  if (step >= 36) {
+    stroke(120);
+    strokeWeight(1);
+    
+    // Draw downward projection (dashed lines) from the front view
+    drawDashedLine(arcLeftX, arcTopY, arcLeftX, topViewTopY);
+    drawDashedLine(arcRightX, arcTopY, arcRightX, topViewTopY);
+
+    float r12 = 12 * scale;
+
+    stroke(255, 0, 0);
+    strokeWeight(4);
+
+    if (step >= 37) {
+      // Step 38 onward: Trim the red line where the circle is
+      line(arcLeftX, topViewTopY, arcLeftX, topViewCenterY - r12);
+      line(arcLeftX, topViewCenterY + r12, arcLeftX, topViewBottomY);
+      
+      line(arcRightX, topViewTopY, arcRightX, topViewCenterY - r12);
+      line(arcRightX, topViewCenterY + r12, arcRightX, topViewBottomY);
+    } else {
+      // Step 37: Full red lines
+      line(arcLeftX, topViewTopY, arcLeftX, topViewBottomY);
+      line(arcRightX, topViewTopY, arcRightX, topViewBottomY);
+    }
+
+    if (step == 36) {
+      fill(0);
+      text("Step 37: Project the corners connecting the vertical green lines and green circle down to Top View as thick red lines", 50, 40);
+    }
+  }
+
+  // =========================================================
+  // STEP 38: Draw 12 mm radius rose circles and trim interior line
+  // =========================================================
+  if (step >= 37) {
+    float r12 = 12 * scale;
+    
+    stroke(255, 0, 127); // Rose color
+    strokeWeight(3);
+    noFill();
+
+    if (step < 38) {
+      // Step 38 only: draw full circles
+      ellipse(arcLeftX, topViewCenterY, 2 * r12, 2 * r12);
+      ellipse(arcRightX, topViewCenterY, 2 * r12, 2 * r12);
+    } else {
+      // Step 39 onward: Draw semicircles
+      // Left circle: trim left half (draw from -PI/2 to PI/2 to keep the right half)
+      arc(arcLeftX, topViewCenterY, 2 * r12, 2 * r12, -HALF_PI, HALF_PI);
+      // Right circle: trim right half (draw from PI/2 to 3*PI/2 to keep the left half)
+      arc(arcRightX, topViewCenterY, 2 * r12, 2 * r12, HALF_PI, PI + HALF_PI);
+    }
+
+    if (step == 37) {
+      stroke(0);
+      strokeWeight(1);
+      drawDimension(arcLeftX, topViewCenterY + r12 + 15, arcLeftX + r12, topViewCenterY + r12 + 15, "12 mm R", true);
+           
+      fill(0);
+      text("Step 38: Draw 12 mm radius rose circles centered on the red lines and trim the lines inside", 50, 40);
+    }
+  }
+
+  // =========================================================
+  // STEP 39: Trim rose circles into semicircles
+  // =========================================================
+  if (step >= 38) {
+    if (step == 38) {
+      float r12 = 12 * scale;
+      stroke(0);
+      strokeWeight(1);
+      drawDimension(arcLeftX, topViewCenterY + r12 + 15, arcLeftX + r12, topViewCenterY + r12 + 15, "12 mm R", true);
+      
+      fill(0);
+      text("Step 39: Trim rose circles to form semicircles (left circle: keep right half, right circle: keep left half)", 50, 40);
+    }
+  }
+
+  // =========================================================
+  // STEP 40: Draw central oil hole at the top
+  // =========================================================
+  if (step >= 39) {
+    float holeTopY = arcTopY - bigR36;          // Top of the R36 green circle
+    float holeMidY = holeTopY + 20 * scale;     // 20 mm depth
+    float holeBottomY = arcTopY - slotR;        // End at the next circle (Top of R19)
+
+    float w1 = 3 * scale;
+    float w2 = 1.5 * scale;
+
+    stroke(50, 50, 50);
+    strokeWeight(2);
+
+    // Upper part: 6 mm wide (3 mm left, 3 mm right)
+    drawDashedLine(centerX - w1, holeTopY, centerX - w1, holeMidY);
+    drawDashedLine(centerX + w1, holeTopY, centerX + w1, holeMidY);
+
+    // Horizontal connection scaling down from 6 mm to 3 mm wide
+    drawDashedLine(centerX - w1, holeMidY, centerX - w2, holeMidY);
+    drawDashedLine(centerX + w1, holeMidY, centerX + w2, holeMidY);
+
+    // Lower part: 3 mm wide (1.5 mm left, 1.5 mm right) down to next circle
+    drawDashedLine(centerX - w2, holeMidY, centerX - w2, holeBottomY);
+    drawDashedLine(centerX + w2, holeMidY, centerX + w2, holeBottomY);
+
+    if (step == 39) {
+      stroke(0);
+      strokeWeight(1);
+      drawDimension(centerX + w1 + 15, holeTopY, centerX + w1 + 15, holeMidY, "20 mm", false);
+      drawDimension(centerX - w1, holeTopY - 15, centerX + w1, holeTopY - 15, "6 mm", true);
+      drawDimension(centerX - w2, (holeMidY + holeBottomY)/2, centerX + w2, (holeMidY + holeBottomY)/2, "3 mm", true);
+      
+      fill(0);
+      text("Step 40: Draw oil hole inside top of green circle (6mm to 20mm depth, then 3mm to next circle)", 50, 40);
+    }
+  }
+
+  // =========================================================
+  // STEP 41: Triangle with 30 degree leader calling out Oil Hole
+  // =========================================================
+  if (step >= 40) {
+    float holeTopY = arcTopY - bigR36; // Points to the very top opening of the oil hole
+
+    // Convert 30 degrees inclination pointing upwards and to the right
+    float angle = radians(30);
+
+    float leaderLength = 35 * scale;   
+    float endX = centerX + leaderLength * cos(angle);
+    float endY = holeTopY - leaderLength * sin(angle);
+    float tailLength = 20 * scale;
+
+    stroke(0);
+    strokeWeight(2);
+    // Draw angled leader line
+    line(centerX, holeTopY, endX, endY);
+    // Draw horizontal tail
+    line(endX, endY, endX + tailLength, endY);
+    
+    // Draw the arrowhead (triangle) pointing directly down the line to (centerX, holeTopY)
+    float arrowBase = 3 * scale;
+    float arrowWidth = 1.5 * scale;
+    
+    fill(0);
+    noStroke();
+    pushMatrix();
+    translate(centerX, holeTopY);
+    rotate(-angle); // Rotate to align with the leader line angle
+    triangle(0, 0, arrowBase, -arrowWidth, arrowBase, arrowWidth);
+    popMatrix();
+
+    // Text Label for the Oil Hole
+    fill(0);
+    textSize(14);
+    textAlign(LEFT, BOTTOM);
+    text("Oil Hole", endX + 5, endY - 2);
+    textAlign(LEFT, CENTER); // Revert to standard alignment
+
+    if (step == 40) {
+      fill(0);
+      text("Step 41: Draw a 30-degree leader line with a triangle pointing to the oil hole", 50, 40);
+    }
+  }
+
+  // =========================================================
+  // STEP 42: M10 Hex Bolt Head Faces & Threads (Front View)
+  // =========================================================
+  if (step >= 41) {
+    float circleOffset = 31 * scale;
+    float leftCircleX  = centerX - circleOffset;
+    float rightCircleX = centerX + circleOffset;
+
+    float r19 = 19 * scale;
+    float circleTopY = arcTopY - r19;
+    float projTopY   = circleTopY - 10 * scale;
+
+    // Use the 20x8 mm rectangle from step 36 to overlay hex faces
+    float rectH1 = 8 * scale;
+    float headY = projTopY - rectH1;
+
+    // M10 Standard Hex head in front view usually splits 20 mm width into 3 faces (5mm, 10mm, 5mm)
+    float faceW = 5 * scale;    
+    
+    stroke(0);
+    strokeWeight(2);
+    
+    // Inner vertical lines to create faces for Left Hex Head
+    line(leftCircleX - faceW, headY, leftCircleX - faceW, headY + rectH1);
+    line(leftCircleX + faceW, headY, leftCircleX + faceW, headY + rectH1);
+    
+    // Inner vertical lines to create faces for Right Hex Head
+    line(rightCircleX - faceW, headY, rightCircleX - faceW, headY + rectH1);
+    line(rightCircleX + faceW, headY, rightCircleX + faceW, headY + rectH1);
+
+    // M10 Minor diameter threads (approx 8.5 mm, using 8 mm drawing standard here)
+    float minorR = 4 * scale;
+    stroke(120);
+    strokeWeight(1);
+    
+    // Left Minor Dia Dashed Threads
+    drawDashedLine(leftCircleX - minorR, baseY, leftCircleX - minorR, projTopY);
+    drawDashedLine(leftCircleX + minorR, baseY, leftCircleX + minorR, projTopY);
+    
+    // Right Minor Dia Dashed Threads
+    drawDashedLine(rightCircleX - minorR, baseY, rightCircleX - minorR, projTopY);
+    drawDashedLine(rightCircleX + minorR, baseY, rightCircleX + minorR, projTopY);
+
+    if (step == 41) {
+      fill(0);
+      text("Step 42: Draw M10 hexagonal faces (5-10-5 mm) and minor diameter (8 mm) threads in Front View", 50, 40);
+    }
+  }
+
+  // =========================================================
+  // STEP 43: Top View Hexagonal Nuts/Bolt Heads
+  // =========================================================
+  if (step >= 42) {
+    float circleOffset = 31 * scale;
+    float leftCircleX  = centerX - circleOffset;
+    float rightCircleX = centerX + circleOffset;
+
+    // 20 mm width across corners from the front view matches a circumscribed radius of 10 mm
+    float hexR = 10 * scale;  
+    
+    stroke(0);
+    strokeWeight(2);
+    noFill();
+
+    // Left Hexagon
+    beginShape();
+    for (int i = 0; i < 6; i++) {
+      // 0, 60, 120... degrees ensures flats project cleanly matching the 5, 10, 5 splits in the front view
+      float angle = TWO_PI / 6 * i;
+      vertex(leftCircleX + hexR * cos(angle), topViewCenterY + hexR * sin(angle));
+    }
+    endShape(CLOSE);
+
+    // Right Hexagon
+    beginShape();
+    for (int i = 0; i < 6; i++) {
+      float angle = TWO_PI / 6 * i;
+      vertex(rightCircleX + hexR * cos(angle), topViewCenterY + hexR * sin(angle));
+    }
+    endShape(CLOSE);
+
+    // Draw drafting chamfer circle inside the hex (touches flats)
+    float chamferR = hexR * cos(radians(30));
+
+    stroke(100);
+    strokeWeight(1);
+    ellipse(leftCircleX, topViewCenterY, chamferR * 2, chamferR * 2);
+    ellipse(rightCircleX, topViewCenterY, chamferR * 2, chamferR * 2);
+
+    if (step == 42) {
+      stroke(0);
+      strokeWeight(1);
+      drawDimension(rightCircleX, topViewCenterY - hexR - 15, rightCircleX + hexR, topViewCenterY - hexR - 15, "R10", true);
+      fill(0);
+      text("Step 43: Draw hexagons in Top View to represent the M10 bolt/nut heads", 50, 40);
+    }
+  }
+
+  // =========================================================
+  // STEP 44: Concentric dark circles (Dia 25, 35, 38, 50) at arcTopY
+  // =========================================================
+  if (step >= 43) {
+    float cX = centerX;
+    float cY = arcTopY;
+
+    noFill();
+    strokeWeight(2);
+
+    // Dia 50 (R 25) - Dark Red
+    stroke(139, 0, 0);
+    ellipse(cX, cY, 50 * scale, 50 * scale);
+
+    // Dia 38 (R 19) - Dark Blue
+    stroke(0, 0, 139);
+    ellipse(cX, cY, 38 * scale, 38 * scale);
+
+    // Dia 35 (R 17.5) - Dark Green
+    stroke(0, 100, 0);
+    ellipse(cX, cY, 35 * scale, 35 * scale);
+
+    // Dia 25 (R 12.5) - Dark Purple
+    stroke(75, 0, 130);
+    ellipse(cX, cY, 25 * scale, 25 * scale);
+
+    if (step == 43) {
+      fill(0);
+      text("Step 44: Draw circles of dia 25, 35, 38, and 50 around the R19 centre", 50, 40);
+    }
+  }
+
+  // =========================================================
+  // STEP 45: 12 mm inward fillet between base and vertical block
+  // =========================================================
+  if (step >= 44) {
+    float r12 = 12 * scale;
+    float rDia = 24 * scale;
+
+    float leftArcCX = leftPurpleX - r12;
+    float leftArcCY = topY - r12;
+
+    float rightArcCX = rightPurpleX + r12;
+    float rightArcCY = topY - r12;
+
+    // Erase the sharp corner lines that currently meet at a 90-degree angle
+    noStroke();
+    fill(255);
+    rect(leftPurpleX - r12 - 2, topY - r12 - 2, r12 + 4, r12 + 4);
+    rect(rightPurpleX - 2, topY - r12 - 2, r12 + 4, r12 + 4);
+
+    // Redraw the horizontal base blue lines extending toward the newly filleted corners
+    stroke(0, 0, 255);
+    strokeWeight(3);
+    line(centerX - baseW/2 + ledgeW, topY, leftPurpleX - r12, topY);
+    line(centerX + baseW/2 - ledgeW, topY, rightPurpleX + r12, topY);
+
+    // Redraw the vertical block lines rising from the top of the inward fillet
+    stroke(150, 0, 200);
+    strokeWeight(3);
+    line(leftPurpleX, topY - r12, leftPurpleX, firstTopY);
+    line(rightPurpleX, topY - r12, rightPurpleX, firstTopY);
+
+    // Draw the 12 mm (R12) inward fillets properly aligning with the base and the block
+    stroke(180, 0, 255); 
+    strokeWeight(4);
+    noFill();
+    arc(leftArcCX, leftArcCY, rDia, rDia, 0, HALF_PI);
+    arc(rightArcCX, rightArcCY, rDia, rDia, HALF_PI, PI);
+
+    if (step == 44) {
+      stroke(0);
+      strokeWeight(1);
+      drawDimension(leftArcCX, leftArcCY, leftArcCX + r12 * 0.707, leftArcCY + r12 * 0.707, "R12", true);
+      fill(0);
+      text("Step 45: Draw 12 mm inward fillet (R12) where the base and the block meet", 50, 40);
+    }
+  }
+  
+  // =========================================================
+  // STEP 46: Project 43 mm radius circle from Top View to Elevation
+  // =========================================================
+  if (step >= 45) {
+    float arcR = 43 * scale;
+    
+    // 1) Project the 43mm radius boss boundaries upwards into the elevation 
+    stroke(150);
+    strokeWeight(1);
+    drawDashedLine(centerX - arcR, topViewCenterY, centerX - arcR, topY);
+    drawDashedLine(centerX + arcR, topViewCenterY, centerX + arcR, topY);
+
+    // 2) Extend the lines in the Top View sides
+    stroke(0);
+    strokeWeight(2);
+    // Draw horizontal extents outlining the boss in the Top View
+    line(centerX - arcR, topViewCenterY - arcR, centerX + arcR, topViewCenterY - arcR);
+    line(centerX - arcR, topViewCenterY + arcR, centerX + arcR, topViewCenterY + arcR);
+    
+    // Connect them vertically on the sides to complete the block/boss top view
+    line(centerX - arcR, topViewCenterY - arcR, centerX - arcR, topViewCenterY + arcR);
+    line(centerX + arcR, topViewCenterY - arcR, centerX + arcR, topViewCenterY + arcR);
+
+    if (step == 45) {
+      fill(0);
+      text("Step 46: Project 43 mm radius to Elevation and extend boss lines in Top View", 50, 40);
+    }
+  }
+}
+
+// =========================================================
+// Helper: Draw Dashed Line
+// =========================================================
+void drawDashedLine(float x1, float y1, float x2, float y2) {
+  float d = dist(x1, y1, x2, y2);
+  int dashes = max(1, int(d / 10));
+  float dx = (x2 - x1) / dashes;
+  float dy = (y2 - y1) / dashes;
+
+  for (int i = 0; i < dashes; i++) {
+    line(x1 + dx * i, y1 + dy * i, x1 + dx * (i + 0.5), y1 + dy * (i + 0.5));
+  }
+}
+
+// =========================================================
+// Helper: Draw Dotted Rectangle
+// =========================================================
+void drawDottedRect(float x, float y, float w, float h) {
+  drawDashedLine(x, y, x + w, y);
+  drawDashedLine(x, y, x, y + h);
+  drawDashedLine(x + w, y, x + w, y + h);
+  drawDashedLine(x, y + h, x + w, y + h);
+}
+
+// =========================================================
+// Dimension helper
+// =========================================================
+void drawDimension(float x1, float y1, float x2, float y2, String label, boolean horizontal) {
+  stroke(0);
+  strokeWeight(1);
+  line(x1, y1, x2, y2);
+
+  float a = 6;
+
+  if (horizontal) {
+    line(x1, y1, x1 + a, y1 - a);
+    line(x1, y1, x1 + a, y1 + a);
+    line(x2, y2, x2 - a, y2 - a);
+    line(x2, y2, x2 - a, y2 + a);
+
+    fill(0);
+    text(label, (x1 + x2) / 2 - 25, y1 - 10);
+  } else {
+    line(x1, y1, x1 - a, y1 + a);
+    line(x1, y1, x1 + a, y1 + a);
+    line(x2, y2, x2 - a, y2 - a);
+    line(x2, y2, x2 + a, y2 - a);
+
+    fill(0);
+    text(label, x1 + 10, (y1 + y2) / 2);
+  }
+}
+
+// =========================================================
+// Mouse click for step-by-step animation
+// =========================================================
+void mousePressed() {
+  if (step < 45) {
+    step++;
+  } else {
+    step = 0;
+  }
+}
