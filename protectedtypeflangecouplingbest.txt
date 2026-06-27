@@ -1,0 +1,591 @@
+// =========================================================
+// INTERACTIVE X-RAY DRAFTING: PROTECTED FLANGE COUPLING
+// Layout: Side View (Left) | Front View (Right)
+// Exact Dimensions based on Image (D=55, Hub=115, Flange=202)
+// =========================================================
+
+int step = 0;
+int maxSteps = 19; // Updated to 19 steps
+float sc = 1.35; // Scale multiplier to fit 1100x750 canvas
+
+// Interactive X-Ray Patch
+float patchX, patchY;
+float patchW = 380, patchH = 380;
+boolean showXRay = false; // Activates at Step 8
+
+// Exact Blueprint Dimensions from Textbook Images
+float D, hubD, pcd, flD, rimD;
+float hubL, flThick, rimW;
+float spigotDia, spigotDepth, gap;
+float keyW, keyH, keyL;
+float holeD, boltD, hexW, headH, nutH;
+
+// View Centers
+float cx, cy, scx, scy;
+
+// UI & Colors (Increased array size to 20 to hold index 0 to 19)
+color[] sCol = new color[20];
+String[] instructions = new String[20];
+
+void setup() {
+  size(1100, 750);
+  
+  patchX = width / 2;
+  patchY = height / 2;
+  
+  // Calculate Exact Blueprint Values scaled for screen
+  D = 55 * sc;             // Shaft Dia
+  hubD = 115 * sc;         // Hub Dia
+  pcd = 160 * sc;          // Pitch Circle Dia
+  flD = 202 * sc;          // Flange Dia
+  rimD = 215 * sc;         // Rim Dia
+  
+  hubL = 70 * sc;          // Hub Length (each side, Total 140)
+  flThick = 30 * sc;       // Web Thickness
+  rimW = 45 * sc;          // Total Rim Width to cover bolt
+  
+  spigotDia = 80 * sc;     // Spigot Joint
+  spigotDepth = 5 * sc;
+  gap = 3 * sc;            // Shaft clearance gap
+  
+  keyW = 15 * sc;          // Key Width
+  keyH = 10 * sc;          // Key Height
+  keyL = 80 * sc;
+  
+  boltD = 16 * sc;         // M16 Bolt
+  holeD = 16 * sc;
+  hexW = boltD * 1.8;
+  headH = boltD * 0.8;
+  nutH = boltD * 1.0;
+  
+  // Layout Coordinates (SIDE VIEW ON LEFT, FRONT VIEW ON RIGHT)
+  scx = width * 0.28;      // Side View Center
+  scy = height * 0.55;     
+  cx = width * 0.75;       // Front View Center
+  cy = scy;                
+
+  // Initialize Colors
+  sCol[0] = color(220, 20, 60);    
+  sCol[1] = color(34, 139, 34);    
+  sCol[2] = color(0, 100, 0);      
+  sCol[3] = color(0, 0, 205);      
+  sCol[4] = color(255, 140, 0);    
+  sCol[5] = color(138, 43, 226);   
+  sCol[6] = color(0, 128, 128);    
+  sCol[7] = color(205, 92, 92);    
+  sCol[8] = color(105, 105, 105);  
+  sCol[9] = color(119, 136, 153);  
+  sCol[10] = color(255, 20, 147);  
+  sCol[11] = color(139, 69, 19);   
+  sCol[12] = color(210, 105, 30);  
+  sCol[13] = color(70, 130, 180);  
+  sCol[14] = color(100, 149, 237); 
+  sCol[15] = color(218, 165, 32);  
+  sCol[16] = color(255, 69, 0);    
+  sCol[17] = color(178, 34, 34);   
+  sCol[18] = color(46, 139, 87);
+  sCol[19] = color(128, 0, 128);   // Color for the new 90-degree key
+
+  instructions[0] = "Step 0: Lay out primary centerlines for both views.";
+  instructions[1] = "Step 1: Main Shafts (Dia 55). Dashed indicates hidden inside hubs.";
+  instructions[2] = "Step 2: Shaft Ends & Clearance Gap at the mating plane.";
+  instructions[3] = "Step 3: Flange Hubs (Length 70 each, Total 140).";
+  instructions[4] = "Step 4: Flange Webs (Dia 202, Thickness 30).";
+  instructions[5] = "Step 5: Spigot & Recess Joint to align the two flanges.";
+  instructions[6] = "Step 6: Protective Rims (Outer Dia 215). Covers bolt heads.";
+  instructions[7] = "Step 7: Sunk Taper Keyway (Width 15) cut into shafts and hubs.";
+  instructions[8] = "Step 8: [X-RAY ENABLED] Hatch the Left (Male) Flange in Section.";
+  instructions[9] = "Step 9: [X-RAY ENABLED] Hatch the Right (Female) Flange (Reverse Angle).";
+  instructions[10]= "Step 10: Pitch Circle (PCD 160) and 4 Clearance Holes.";
+  instructions[11]= "Step 11: Top M16 Hex Bolt (Left) and Nut (Right).";
+  instructions[12]= "Step 12: Bottom M16 Hex Bolt and Nut.";
+  instructions[13]= "Step 13: SIDE VIEW - Draw Inner Shaft (Dia 55) & Section Hatching.";
+  instructions[14]= "Step 14: SIDE VIEW - Draw Hub (Dia 115).";
+  instructions[15]= "Step 15: SIDE VIEW - Draw Flange (Dia 202) & Rim (Dia 215).";
+  instructions[16]= "Step 16: SIDE VIEW - Draw Pitch Circle (160) & 4 Holes.";
+  instructions[17]= "Step 17: SIDE VIEW - Draw M16 Hexagonal Bolt Heads & Clearances.";
+  instructions[18]= "Step 18: SIDE VIEW - Draw Sunk Key profile (15x10mm) at the top.";
+  instructions[19]= "Step 19: SIDE VIEW & FRONT VIEW - Add secondary key 90° to the right side.";
+}
+
+void draw() {
+  background(245, 248, 250); 
+  
+  // Smoothly track mouse for X-Ray
+  patchX = lerp(patchX, mouseX, 0.2);
+  patchY = lerp(patchY, mouseY, 0.2);
+  showXRay = (step >= 8);
+
+  // 1. DRAW BASE LAYER (Full External / Hidden Lines)
+  drawModel(step, false);
+  
+  // 2. DRAW DIMENSIONS & PROJECTIONS (On base layer so unaffected by X-Ray)
+  drawDimensions(step);
+  drawConstructionData(step);
+
+  // 3. DRAW X-RAY LAYER (Full Internal Section + Hatching on FRONT VIEW ONLY)
+  if (showXRay) {
+    pushMatrix();
+    clip(patchX - patchW/2, patchY - patchH/2, patchW, patchH);
+    fill(255); noStroke(); 
+    rect(patchX - patchW/2, patchY - patchH/2, patchW, patchH); 
+    drawModel(step, true);
+    noClip();
+    popMatrix();
+    drawScannerBorder();
+  }
+  
+  // 4. UI
+  drawUI();
+}
+
+// =========================================================
+// MAIN DRAFTING FUNCTION
+// =========================================================
+void drawModel(int s, boolean isX) {
+  pushStyle();
+  float sw = isX ? 2.5 : 1.5; 
+  float anim = (frameCount % 32) / 4.0; 
+  noFill();
+
+  // ---------------------------------------------------------
+  // FRONT VIEW (RIGHT SIDE)
+  // ---------------------------------------------------------
+
+  if (s >= 0) {
+    stroke(sCol[0]); strokeWeight(1);
+    drawChainLine(scx - 160, cy, cx + 240, cy);       
+    drawChainLine(cx, cy - 200, cx, cy + 200);        
+    drawChainLine(scx, scy - 200, scx, scy + 200);   
+  }
+
+  if (s >= 1) {
+    stroke(sCol[1]); strokeWeight(sw);
+    line(cx - hubL - 60, cy - D/2, cx - hubL, cy - D/2);
+    line(cx - hubL - 60, cy + D/2, cx - hubL, cy + D/2);
+    line(cx + hubL, cy - D/2, cx + hubL + 60, cy - D/2);
+    line(cx + hubL, cy + D/2, cx + hubL + 60, cy + D/2);
+    
+    if (isX) {
+      line(cx - hubL, cy - D/2, cx - gap/2, cy - D/2);
+      line(cx - hubL, cy + D/2, cx - gap/2, cy + D/2);
+      line(cx + hubL, cy - D/2, cx + gap/2, cy - D/2);
+      line(cx + hubL, cy + D/2, cx + gap/2, cy + D/2);
+    } else {
+      drawDashedLine(cx - hubL, cy - D/2, cx - gap/2, cy - D/2);
+      drawDashedLine(cx - hubL, cy + D/2, cx - gap/2, cy + D/2);
+      drawDashedLine(cx + hubL, cy - D/2, cx + gap/2, cy - D/2);
+      drawDashedLine(cx + hubL, cy + D/2, cx + gap/2, cy + D/2);
+    }
+  }
+
+  if (s >= 2) {
+    stroke(sCol[2]); strokeWeight(sw);
+    if (isX) {
+      line(cx - gap/2, cy - D/2, cx - gap/2, cy + D/2);
+      line(cx + gap/2, cy - D/2, cx + gap/2, cy + D/2);
+    } else {
+      drawDashedLine(cx - gap/2, cy - D/2, cx - gap/2, cy + D/2);
+      drawDashedLine(cx + gap/2, cy - D/2, cx + gap/2, cy + D/2);
+    }
+  }
+
+  if (s >= 3) {
+    stroke(sCol[3]); strokeWeight(sw); 
+    line(cx - hubL, cy - hubD/2, cx, cy - hubD/2);
+    line(cx - hubL, cy + hubD/2, cx, cy + hubD/2);
+    line(cx - hubL, cy - hubD/2, cx - hubL, cy + hubD/2);
+    line(cx, cy - hubD/2, cx + hubL, cy - hubD/2);
+    line(cx, cy + hubD/2, cx + hubL, cy + hubD/2);
+    line(cx + hubL, cy - hubD/2, cx + hubL, cy + hubD/2);
+  }
+
+  if (s >= 4) {
+    stroke(sCol[4]); strokeWeight(sw); 
+    line(cx - flThick, cy - hubD/2, cx - flThick, cy - flD/2);
+    line(cx - flThick, cy + hubD/2, cx - flThick, cy + flD/2);
+    line(cx + flThick, cy - hubD/2, cx + flThick, cy - flD/2);
+    line(cx + flThick, cy + hubD/2, cx + flThick, cy + flD/2);
+    line(cx, cy - flD/2, cx, cy + flD/2); 
+  }
+
+  if (s >= 5) {
+    stroke(sCol[5]); strokeWeight(sw); 
+    if (isX) {
+      line(cx, cy - spigotDia/2, cx + spigotDepth, cy - spigotDia/2);
+      line(cx, cy + spigotDia/2, cx + spigotDepth, cy + spigotDia/2);
+      line(cx + spigotDepth, cy - spigotDia/2, cx + spigotDepth, cy + spigotDia/2);
+    } else {
+      drawDashedLine(cx, cy - spigotDia/2, cx + spigotDepth, cy - spigotDia/2);
+      drawDashedLine(cx, cy + spigotDia/2, cx + spigotDepth, cy + spigotDia/2);
+      drawDashedLine(cx + spigotDepth, cy - spigotDia/2, cx + spigotDepth, cy + spigotDia/2);
+    }
+  }
+
+  if (s >= 6) {
+    stroke(sCol[6]); strokeWeight(sw); 
+    line(cx - flThick, cy - flD/2, cx - rimW, cy - flD/2);
+    line(cx - flThick, cy + flD/2, cx - rimW, cy + flD/2);
+    line(cx - rimW, cy - flD/2, cx - rimW, cy - rimD/2);
+    line(cx - rimW, cy + flD/2, cx - rimW, cy + rimD/2);
+    line(cx - rimW, cy - rimD/2, cx, cy - rimD/2);
+    line(cx - rimW, cy + rimD/2, cx, cy + rimD/2);
+    
+    line(cx + flThick, cy - flD/2, cx + rimW, cy - flD/2);
+    line(cx + flThick, cy + flD/2, cx + rimW, cy + flD/2);
+    line(cx + rimW, cy - flD/2, cx + rimW, cy - rimD/2);
+    line(cx + rimW, cy + flD/2, cx + rimW, cy + rimD/2);
+    line(cx, cy - rimD/2, cx + rimW, cy - rimD/2);
+    line(cx, cy + rimD/2, cx + rimW, cy + rimD/2);
+    
+    line(cx, cy - rimD/2, cx, cy - flD/2); 
+    line(cx, cy + rimD/2, cx, cy + flD/2);
+  }
+
+  if (s >= 7) {
+    stroke(sCol[7]); strokeWeight(sw);
+    float kTop = cy - D/2 - (keyH/2);
+    if (isX) { fill(200); rect(cx - keyL/2, kTop, keyL, keyH); noFill(); } 
+    else { drawDashedRect(cx - keyL/2, kTop, keyL, keyH); }
+  }
+
+  if (isX && s >= 8) {
+    for (int side = -1; side <= 1; side += 2) { 
+      float yDir = side;
+      // Step 8: Left Flange Hatching
+      if (s >= 8) {
+        color hc = sCol[8];
+        hatchRect(cx - hubL, cy + (yDir < 0 ? -hubD/2 : D/2), hubL, (hubD-D)/2, 1, hc, anim);
+        hatchRect(cx - flThick, cy + (yDir < 0 ? -flD/2 : hubD/2), flThick, (flD-hubD)/2, 1, hc, anim);
+        hatchRect(cx - rimW, cy + (yDir < 0 ? -rimD/2 : flD/2), rimW, (rimD-flD)/2, 1, hc, anim);
+        hatchRect(cx, cy + (yDir < 0 ? -spigotDia/2 : D/2), spigotDepth, (spigotDia-D)/2, 1, hc, anim);
+      }
+      // Step 9: Right Flange Hatching
+      if (s >= 9) {
+        color hc = sCol[9];
+        hatchRect(cx + spigotDepth, cy + (yDir < 0 ? -spigotDia/2 : D/2), hubL - spigotDepth, (spigotDia-D)/2, -1, hc, anim);
+        hatchRect(cx, cy + (yDir < 0 ? -hubD/2 : spigotDia/2), hubL, (hubD-spigotDia)/2, -1, hc, anim);
+        hatchRect(cx, cy + (yDir < 0 ? -flD/2 : hubD/2), flThick, (flD-hubD)/2, -1, hc, anim);
+        hatchRect(cx, cy + (yDir < 0 ? -rimD/2 : flD/2), rimW, (rimD-flD)/2, -1, hc, anim);
+      }
+    }
+  }
+
+  if (s >= 10) {
+    stroke(sCol[10]); strokeWeight(1);
+    drawChainLine(cx - rimW, cy - pcd/2, cx + rimW, cy - pcd/2);
+    drawChainLine(cx - rimW, cy + pcd/2, cx + rimW, cy + pcd/2);
+    
+    strokeWeight(sw);
+    if (isX) {
+      fill(255); noStroke(); 
+      rect(cx - flThick - 1, cy - pcd/2 - holeD/2, (flThick * 2) + 2, holeD);
+      rect(cx - flThick - 1, cy + pcd/2 - holeD/2, (flThick * 2) + 2, holeD);
+      stroke(sCol[10]); noFill();
+      line(cx - flThick, cy - pcd/2 - holeD/2, cx + flThick, cy - pcd/2 - holeD/2);
+      line(cx - flThick, cy - pcd/2 + holeD/2, cx + flThick, cy - pcd/2 + holeD/2);
+      line(cx - flThick, cy + pcd/2 - holeD/2, cx + flThick, cy + pcd/2 - holeD/2);
+      line(cx - flThick, cy + pcd/2 + holeD/2, cx + flThick, cy + pcd/2 + holeD/2);
+    } else {
+      drawDashedLine(cx - flThick, cy - pcd/2 - holeD/2, cx + flThick, cy - pcd/2 - holeD/2);
+      drawDashedLine(cx - flThick, cy - pcd/2 + holeD/2, cx + flThick, cy - pcd/2 + holeD/2);
+      drawDashedLine(cx - flThick, cy + pcd/2 - holeD/2, cx + flThick, cy + pcd/2 - holeD/2);
+      drawDashedLine(cx - flThick, cy + pcd/2 + holeD/2, cx + flThick, cy + pcd/2 + holeD/2);
+    }
+  }
+
+  if (s >= 11) {
+    stroke(sCol[11]);
+    if (isX) drawSolidBolt(cx, cy - pcd/2, sCol[11]);
+    else drawDashedBolt(cx, cy - pcd/2);
+  }
+  if (s >= 12) {
+    stroke(sCol[12]);
+    if (isX) drawSolidBolt(cx, cy + pcd/2, sCol[12]);
+    else drawDashedBolt(cx, cy + pcd/2);
+  }
+
+  // ---------------------------------------------------------
+  // SIDE VIEW (LEFT SIDE)
+  // ---------------------------------------------------------
+
+  if (s >= 13) {
+    stroke(sCol[13]); strokeWeight(sw); 
+    
+    // Draw shaft cross section with hatching (as shown in standard drawing)
+    pushMatrix();
+    clip(scx - D/2, scy - D/2, D, D);
+    strokeWeight(1); stroke(sCol[8]);
+    for(float i = scx - D; i < scx + D; i += 7) {
+      line(i, scy - D, i + D*2, scy + D);
+    }
+    noClip();
+    popMatrix();
+
+    // Clear keyway area from hatching (Top Key)
+    if(s >= 18) {
+      fill(245, 248, 250); noStroke();
+      rect(scx - keyW/2, scy - D/2, keyW, 6);
+      noFill();
+    }
+    // Clear keyway area from hatching (Right Key)
+    if(s >= 19) {
+      fill(245, 248, 250); noStroke();
+      rect(scx + D/2 - 6, scy - keyW/2, 6, keyW);
+      noFill();
+    }
+    
+    stroke(sCol[13]); strokeWeight(sw); 
+    ellipse(scx, scy, D, D);          
+  }
+  
+  if (s >= 14) {
+    stroke(sCol[14]); strokeWeight(sw); ellipse(scx, scy, hubD, hubD);    
+  }
+  if (s >= 15) {
+    stroke(sCol[15]); strokeWeight(sw); ellipse(scx, scy, flD, flD); ellipse(scx, scy, rimD, rimD);       
+  }
+  
+  if (s >= 16) {
+    stroke(sCol[16]); strokeWeight(1); drawChainCircle(scx, scy, pcd);
+  }
+  
+  if (s >= 17) {
+    stroke(sCol[17]); strokeWeight(sw); 
+    for (int i = 0; i < 4; i++) {
+      float angle = i * HALF_PI;
+      float bx = scx + (pcd/2) * cos(angle);
+      float by = scy + (pcd/2) * sin(angle);
+      
+      fill(245, 248, 250); // solid cover
+      ellipse(bx, by, holeD, holeD); // Bolt shaft
+      ellipse(bx, by, hexW * 0.866, hexW * 0.866); // Hex chamfer ring
+      drawHexPolygon(bx, by, hexW / 1.732); // Hex head
+      noFill();
+    }
+  }
+  
+  if (s >= 18) {
+    stroke(sCol[18]); strokeWeight(sw); 
+    fill(245, 248, 250); 
+    // Key shape cutting into hub and shaft at the top (12 o'clock)
+    rect(scx - keyW/2, scy - D/2 - keyH/2, keyW, keyH);
+    noFill();
+  }
+
+  if (s >= 19) {
+    stroke(sCol[19]); strokeWeight(sw); 
+    fill(245, 248, 250);
+    // Key shape cutting into hub and shaft at the right side (3 o'clock)
+    rect(scx + D/2 - keyH/2, scy - keyW/2, keyH, keyW);
+    noFill();
+
+    // Front View projection for the 90-degree key (centered on axis)
+    if (isX) { 
+      fill(200); 
+      rect(cx - keyL/2, cy - keyW/2, keyL, keyW); 
+      noFill(); 
+    } else { 
+      drawDashedRect(cx - keyL/2, cy - keyW/2, keyL, keyW); 
+    }
+  }
+  
+  popStyle();
+}
+
+// =========================================================
+// DIMENSIONS & PROJECTIONS
+// =========================================================
+void drawDimensions(int s) {
+  pushStyle();
+  strokeWeight(1); fill(0); textSize(12);
+  
+  // Front View Dimensions
+  if (s >= 1) drawLinearDim(cx - hubL - 40, cy - D/2, cx - hubL - 40, cy + D/2, "Ø55", true, 30);
+  if (s >= 3) {
+    drawLinearDim(cx - hubL, cy - hubD/2 - 20, cx, cy - hubD/2 - 20, "70", false, 0);
+    drawLinearDim(cx - hubL, cy - hubD/2 - 40, cx + hubL, cy - hubD/2 - 40, "140", false, 0);
+  }
+  if (s >= 4) drawLinearDim(cx - flThick, cy + flD/2 + 30, cx, cy + flD/2 + 30, "30", false, 0);
+
+  // Side View Radial Dimensions (Exactly matching Image)
+  if (s >= 13) drawRadialLeader(scx, scy, D/2, 230, "Ø55", 30);
+  if (s >= 14) drawRadialLeader(scx, scy, hubD/2, 220, "Ø115", 40);
+  if (s >= 15) {
+    drawRadialLeader(scx, scy, flD/2, 205, "Ø202", 50);
+    drawRadialLeader(scx, scy, rimD/2, 190, "Ø215", 60);
+  }
+  if (s >= 16) drawRadialLeader(scx, scy, pcd/2, 215, "Ø160", 45);
+  
+  // Point to Top Bolt
+  if (s >= 17) drawRadialLeader(scx, scy, pcd/2 + holeD, 300, "M16 BOLT, 4Nos.", 80);
+
+  popStyle();
+}
+
+void drawLinearDim(float x1, float y1, float x2, float y2, String txt, boolean isVertical, float extOffset) {
+  stroke(50); fill(50); textAlign(CENTER, BOTTOM);
+  line(x1, y1, x2, y2); 
+  
+  pushMatrix(); translate(x1, y1); rotate(atan2(y2-y1, x2-x1)); triangle(0, 0, 8, -3, 8, 3); popMatrix();
+  pushMatrix(); translate(x2, y2); rotate(atan2(y1-y2, x1-x2)); triangle(0, 0, 8, -3, 8, 3); popMatrix();
+  
+  if (isVertical) {
+    pushMatrix(); translate(x1 - 10, (y1+y2)/2); rotate(-HALF_PI); text(txt, 0, 0); popMatrix();
+    line(x1, y1, x1 - extOffset, y1); line(x2, y2, x2 - extOffset, y2);
+  } else {
+    text(txt, (x1+x2)/2, y1 - 5);
+    line(x1, y1, x1, y1 + (y1 < cy ? 15 : -15)); line(x2, y2, x2, y2 + (y2 < cy ? 15 : -15));
+  }
+}
+
+// Custom radial leader for side view matching standard drawing conventions
+void drawRadialLeader(float cx, float cy, float radius, float angleDeg, String txt, float lineLen) {
+  float a = radians(angleDeg);
+  float ex = cx + cos(a) * radius;
+  float ey = cy + sin(a) * radius;
+  float px = cx + cos(a) * (radius + lineLen);
+  float py = cy + sin(a) * (radius + lineLen);
+  
+  stroke(50); fill(50); strokeWeight(1);
+  line(ex, ey, px, py);
+  
+  // Arrowhead pointing towards the center
+  pushMatrix();
+  translate(ex, ey); rotate(a + PI); 
+  triangle(0, 0, 10, -3, 10, 3);
+  popMatrix();
+  
+  // Horizontal line connecting to text
+  float tailEnd = px - 60; // Extend left
+  line(px, py, tailEnd, py);
+  
+  textAlign(RIGHT, BOTTOM);
+  text(txt, px - 2, py - 2);
+}
+
+void drawConstructionData(int s) {
+  pushStyle(); stroke(255, 0, 0, 80); strokeWeight(1);
+  // Lines draw from Side View (Left) to Front View (Right)
+  if (s == 13) drawProjLine(scx, scy - D/2, cx, cy - D/2);
+  if (s == 14) drawProjLine(scx, scy - hubD/2, cx, cy - hubD/2);
+  if (s == 15) { drawProjLine(scx, scy - flD/2, cx, cy - flD/2); drawProjLine(scx, scy - rimD/2, cx, cy - rimD/2); }
+  if (s == 16) drawProjLine(scx, scy - pcd/2, cx, cy - pcd/2);
+  popStyle();
+}
+
+void drawProjLine(float x1, float y1, float x2, float y2) {
+  float d = dist(x1, y1, x2, y2); float dashes = d / 15; 
+  float dx = (x2 - x1) / dashes; float dy = (y2 - y1) / dashes;
+  for (int i = 0; i < dashes; i += 2) line(x1 + dx * i, y1 + dy * i, x1 + dx * (i + 1), y1 + dy * (i + 1));
+}
+
+// =========================================================
+// UI AND SCANNER BORDER
+// =========================================================
+void drawScannerBorder() {
+  pushStyle();
+  fill(0, 150, 255, 10); stroke(0, 150, 255, 200); strokeWeight(4);
+  rect(patchX - patchW/2, patchY - patchH/2, patchW, patchH, 15);
+  
+  strokeWeight(8); float c = 30; float px = patchX - patchW/2; float py = patchY - patchH/2;
+  line(px, py+c, px, py); line(px, py, px+c, py);
+  line(px+patchW, py+c, px+patchW, py); line(px+patchW, py, px+patchW-c, py);
+  line(px, py+patchH-c, px, py+patchH); line(px, py+patchH, px+c, py+patchH);
+  line(px+patchW, py+patchH-c, px+patchW, py+patchH); line(px+patchW, py+patchH, px+patchW-c, py+patchH);
+  
+  strokeWeight(2); stroke(0, 150, 255, 120);
+  line(patchX - 15, patchY, patchX + 15, patchY); line(patchX, patchY - 15, patchX, patchY + 15);
+  popStyle();
+}
+
+void drawUI() {
+  fill(30); noStroke(); rect(0, 0, width, 80);
+  fill(255); textSize(20); textAlign(LEFT, CENTER);
+  text("INTERACTIVE X-RAY DRAFTING: PROTECTED FLANGE COUPLING", 20, 25);
+  fill(0, 200, 255); textSize(16);
+  text(showXRay ? "DRAG X-Ray Scanner. TAP screen to advance steps." : "TAP screen to advance steps (X-Ray unlocks at Step 8).", 20, 55);
+  
+  fill(255, 255, 255, 230); stroke(200); strokeWeight(2);
+  rect(20, height - 70, width - 40, 50, 10);
+  
+  fill(sCol[step]); textSize(18);
+  text(instructions[step], 40, height - 45);
+  
+  fill(0, 120); textSize(18); textAlign(CENTER, CENTER);
+  text("SIDE VIEW", scx, scy + rimD/2 + 60);
+  text("FRONT VIEW (Half-Section Base)", cx, cy + rimD/2 + 60);
+}
+
+// =========================================================
+// HELPER DRAWING FUNCTIONS
+// =========================================================
+void drawChainLine(float x1, float y1, float x2, float y2) {
+  float d = dist(x1, y1, x2, y2); float angle = atan2(y2-y1, x2-x1);
+  pushMatrix(); translate(x1, y1); rotate(angle); float pos = 0;
+  while(pos < d) {
+    float len = min(20, d - pos); line(pos, 0, pos + len, 0); pos += len + 5;
+    if (pos < d) { line(pos, 0, pos + 2, 0); pos += 7; }
+  }
+  popMatrix();
+}
+
+void drawChainCircle(float px, float py, float dia) {
+  float circ = PI * dia; int dashes = int(circ / 12); float aStep = TWO_PI / dashes;
+  for(int i = 0; i < dashes; i++) {
+    float a1 = i * aStep;
+    if(i % 2 == 0) arc(px, py, dia, dia, a1, a1 + aStep * 0.8);
+    else arc(px, py, dia, dia, a1, a1 + aStep * 0.1); 
+  }
+}
+
+void drawDashedLine(float x1, float y1, float x2, float y2) {
+  float d = dist(x1, y1, x2, y2); int dashes = max(1, int(d / 8));
+  float dx = (x2 - x1) / dashes; float dy = (y2 - y1) / dashes;
+  for (int i = 0; i < dashes; i += 2) line(x1 + dx * i, y1 + dy * i, x1 + dx * (i + 1), y1 + dy * (i + 1)); 
+}
+
+void drawDashedRect(float x, float y, float w, float h) {
+  drawDashedLine(x, y, x + w, y); drawDashedLine(x, y, x, y + h);
+  drawDashedLine(x + w, y, x + w, y + h); drawDashedLine(x, y + h, x + w, y + h);
+}
+
+void drawDashedBolt(float bx, float by) {
+  drawDashedLine(bx - flThick, by - boltD/2, bx + flThick, by - boltD/2);
+  drawDashedLine(bx - flThick, by + boltD/2, bx + flThick, by + boltD/2);
+  drawDashedRect(bx - flThick - headH, by - hexW/2, headH, hexW); 
+  drawDashedRect(bx + flThick, by - hexW/2, nutH, hexW); 
+}
+
+void drawSolidBolt(float bx, float by, color c) {
+  stroke(c); strokeWeight(2.5); fill(220);
+  rect(bx - flThick - headH, by - boltD/2, (flThick * 2) + headH + nutH, boltD); 
+  rect(bx - flThick - headH, by - hexW/2, headH, hexW); 
+  line(bx - flThick - headH + headH/4, by - hexW/2, bx - flThick - headH + headH/4, by + hexW/2);
+  rect(bx + flThick, by - hexW/2, nutH, hexW); 
+  line(bx + flThick + nutH/4, by - hexW/2, bx + flThick + nutH/4, by + hexW/2);
+  noFill();
+}
+
+void hatchRect(float x, float y, float w, float h, int dir, color c, float offset) {
+  pushStyle(); stroke(c); strokeCap(SQUARE); strokeWeight(1.5); clip(x, y, w, h);
+  float maxDim = w + h;
+  for(float i = -maxDim; i < maxDim * 2; i += 7) {
+    float o = i + (dir > 0 ? offset : -offset);
+    if(dir > 0) line(x + o, y, x + o + h, y + h); else line(x + o, y + h, x + o + h, y);
+  }
+  noClip(); popStyle();
+}
+
+void drawHexPolygon(float px, float py, float radius) {
+  beginShape();
+  for(int i = 0; i < 6; i++) {
+    float angle = TWO_PI / 6 * i + HALF_PI; 
+    vertex(px + cos(angle) * radius, py + sin(angle) * radius);
+  }
+  endShape(CLOSE);
+}
+
+void mousePressed() {
+  if (step < maxSteps) step++; else step = 0;
+}
