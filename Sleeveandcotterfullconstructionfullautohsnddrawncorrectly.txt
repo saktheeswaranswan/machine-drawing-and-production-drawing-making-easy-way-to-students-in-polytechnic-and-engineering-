@@ -1,0 +1,421 @@
+// =========================================================
+// INTERACTIVE DRAFTING: SLEEVE & COTTER JOINT
+// Layout: Front View (Left/Center), Side View (Right)
+// Exact Dimensions extracted from AutoCAD Textbook Commands
+// No Hatching as per explicit instructions
+// =========================================================
+
+int step = 0;
+int maxSteps = 13; 
+float sc = 2.8; // Scale multiplier to fit canvas
+
+// --- Dimensions (Scaled) ---
+float sL, sD;                   // Sleeve Length, Outer Dia
+float rD, shD;                  // Rod Dia, Shaft Dia
+float cOff, cWTop, cWBot, cH;   // Cotter Offset, Widths, Height
+float rodL, shaftL, clearD;     // Rod inserted length, shaft length, clearance
+
+// --- View Coordinates ---
+float cx, cy;                   // Front View Center
+float cx2, cy2;                 // Side View Center
+
+// --- UI & Colors ---
+color[] sCol = new color[14];
+String[] instructions = new String[14];
+
+void setup() {
+  size(1250, 850);
+  
+  // CALCULATE EXACT DIMENSIONS FROM TEXTBOOK
+  sL = 150 * sc;                // Sleeve Length = 150
+  sD = 44 * sc;                 // Sleeve Outer Dia = 44
+  rD = 25 * sc;                 // Rod End Dia = 25
+  shD = 22 * sc;                // Rod Shaft Dia = 22
+  cOff = 50 * sc;               // Cotter offset from center = 50 (Sleeve end to cotter is 25)
+  cWTop = 28 * sc;              // Cotter Top Width = 28
+  cWBot = 25 * sc;              // Cotter Bottom Width = 25
+  cH = 65 * sc;                 // Cotter Total Height = 65
+  rodL = 88 * sc;               // Rod insertion length = 88
+  shaftL = 10 * sc;             // Exposed shaft stub length = 10
+  clearD = 3 * sc;              // Cotter slot clearance = 3.0
+
+  // LAYOUT COORDINATES
+  cx = width * 0.40;            // Center of Front View
+  cy = height * 0.50;           
+  cx2 = width * 0.82;           // Center of Side View
+  cy2 = height * 0.50;
+
+  // INITIALIZE COLORS FOR PARTS
+  sCol[0] = color(200, 50, 50);    // Centerlines
+  sCol[1] = color(0, 100, 200);    // Sleeve Outer
+  sCol[2] = color(0, 150, 50);     // Left Rod
+  sCol[3] = color(200, 100, 0);    // Left Cotter
+  sCol[4] = color(0, 150, 50);     // Right Rod
+  sCol[5] = color(200, 100, 0);    // Right Cotter
+  sCol[6] = color(0, 100, 200);    // Sleeve Inner Details
+  sCol[7] = color(150, 0, 150);    // Slot Clearances
+  sCol[8] = color(100, 100, 100);  // Side View Construction
+  sCol[9] = color(0, 100, 200);    // Side View Sleeve & Rod
+  sCol[10]= color(200, 100, 0);    // Side View Cotter
+  sCol[11]= color(50, 50, 50);     // Main Dimensions
+  sCol[12]= color(50, 50, 50);     // Detail Dimensions
+  sCol[13]= color(0, 0, 0);        // Final Polish
+
+  // STEP INSTRUCTIONS
+  instructions[0] = "Step 0: Set drawing limits and draw primary centerlines.";
+  instructions[1] = "Step 1: Draw Sleeve bounds (150x44) with 2x45° chamfered corners.";
+  instructions[2] = "Step 2: Draw Left Connecting Rod (Dia 25 end, Dia 22 shaft).";
+  instructions[3] = "Step 3: Draw Left Tapered Cotter (Top 28, Bot 25, Height 65).";
+  instructions[4] = "Step 4: Use MIRROR command for Right Connecting Rod.";
+  instructions[5] = "Step 5: Use MIRROR command for Right Cotter.";
+  instructions[6] = "Step 6: Draw inner Sleeve Bore (Ø25) tracking rod insertion.";
+  instructions[7] = "Step 7: Add 3.0mm Clearance Offsets to Cotter slots.";
+  instructions[8] = "Step 8: Set up Side View tracking lines projecting from Front View.";
+  instructions[9] = "Step 9: Draw Side View concentric circles (Ø44 Outer, Ø25 Inner Bore).";
+  instructions[10]= "Step 10: Draw Side View Cotter profile (Width 6, hidden lines inside circles).";
+  instructions[11]= "Step 11: Apply Sample Dimensioning (Widths, Distances & Heights).";
+  instructions[12]= "Step 12: Apply Sample Dimensioning (Diameters & Clearances).";
+  instructions[13]= "Step 13: Finalize drawing (Darken visible edges, solid part masking).";
+}
+
+void draw() {
+  background(245, 248, 250); 
+  drawModel(step);
+  drawUI();
+}
+
+void drawModel(int s) {
+  pushStyle();
+  float sw = 2.0; 
+  noFill();
+
+  // ---------------------------------------------------------
+  // STEP 0: Centerlines
+  // ---------------------------------------------------------
+  if (s >= 0) {
+    stroke(sCol[0]); strokeWeight(1);
+    drawChainLine(cx - sL/2 - 50*sc, cy, cx + sL/2 + 50*sc, cy);     // Main Horizontal
+    drawChainLine(cx, cy - sD, cx, cy + sD);                         // Main Vertical
+    drawChainLine(cx - cOff - 14*sc, cy - sD, cx - cOff - 14*sc, cy + sD); // Left Cotter Center
+    drawChainLine(cx + cOff + 14*sc, cy - sD, cx + cOff + 14*sc, cy + sD); // Right Cotter Center
+    
+    drawChainLine(cx2 - sD*1.2, cy, cx2 + sD*1.2, cy);               // Side View Horiz
+    drawChainLine(cx2, cy - sD*1.5, cx2, cy + sD*1.5);               // Side View Vert
+  }
+
+  // ---------------------------------------------------------
+  // STEP 1: Sleeve Outer Rect
+  // ---------------------------------------------------------
+  if (s >= 1) {
+    stroke(sCol[1]); strokeWeight(sw);
+    float chm = 2 * sc; // 2x45 chamfer
+    float l = cx - sL/2; float r = cx + sL/2;
+    float t = cy - sD/2; float b = cy + sD/2;
+    
+    beginShape();
+    vertex(l + chm, t); vertex(r - chm, t); vertex(r, t + chm); 
+    vertex(r, b - chm); vertex(r - chm, b); vertex(l + chm, b); 
+    vertex(l, b - chm); vertex(l, t + chm);
+    endShape(CLOSE);
+    
+    // Chamfer boundary lines
+    line(l + chm, t, l + chm, b); line(r - chm, t, r - chm, b);
+  }
+
+  // ---------------------------------------------------------
+  // STEP 2: Left Connecting Rod
+  // ---------------------------------------------------------
+  if (s >= 2) {
+    stroke(sCol[2]); strokeWeight(sw);
+    float rX = cx - rodL; 
+    
+    // Inside Sleeve (Rod End Dia 25)
+    line(rX, cy - rD/2, cx, cy - rD/2);
+    line(rX, cy + rD/2, cx, cy + rD/2);
+    line(cx, cy - rD/2, cx, cy + rD/2); // Rod center touching face
+    
+    // Shaft sticking out (Dia 22)
+    line(rX, cy - shD/2, rX - shaftL, cy - shD/2);
+    line(rX, cy + shD/2, rX - shaftL, cy + shD/2);
+    line(rX, cy - rD/2, rX, cy + rD/2); // Step down
+    
+    // Shaft Break (Arc)
+    arc(rX - shaftL, cy, 6*sc, shD, HALF_PI, PI+HALF_PI);
+  }
+
+  // ---------------------------------------------------------
+  // STEP 3: Left Cotter
+  // ---------------------------------------------------------
+  if (s >= 3) {
+    stroke(sCol[3]); strokeWeight(sw);
+    float cL = cx - cOff; 
+    float tY = cy - cH/2; float bY = cy + cH/2;
+    
+    // Left straight face
+    line(cL, tY, cL, bY);
+    // Right tapered face
+    line(cL + cWTop, tY, cL + cWBot, bY);
+    // Arcs
+    arc(cL + cWTop/2, tY, cWTop, 12*sc, PI, TWO_PI);
+    arc(cL + cWBot/2, bY, cWBot, 12*sc, 0, PI);
+  }
+
+  // ---------------------------------------------------------
+  // STEP 4: Right Connecting Rod (Mirror)
+  // ---------------------------------------------------------
+  if (s >= 4) {
+    stroke(sCol[4]); strokeWeight(sw);
+    float rX = cx + rodL; 
+    
+    line(rX, cy - rD/2, cx, cy - rD/2);
+    line(rX, cy + rD/2, cx, cy + rD/2);
+    
+    line(rX, cy - shD/2, rX + shaftL, cy - shD/2);
+    line(rX, cy + shD/2, rX + shaftL, cy + shD/2);
+    line(rX, cy - rD/2, rX, cy + rD/2);
+    
+    arc(rX + shaftL, cy, 6*sc, shD, -HALF_PI, HALF_PI);
+  }
+
+  // ---------------------------------------------------------
+  // STEP 5: Right Cotter (Mirror)
+  // ---------------------------------------------------------
+  if (s >= 5) {
+    stroke(sCol[5]); strokeWeight(sw);
+    float cR = cx + cOff; 
+    float tY = cy - cH/2; float bY = cy + cH/2;
+    
+    // Right straight face
+    line(cR, tY, cR, bY);
+    // Left tapered face
+    line(cR - cWTop, tY, cR - cWBot, bY);
+    
+    arc(cR - cWTop/2, tY, cWTop, 12*sc, PI, TWO_PI);
+    arc(cR - cWBot/2, bY, cWBot, 12*sc, 0, PI);
+  }
+
+  // ---------------------------------------------------------
+  // STEP 6: Inner Sleeve Details (Bore)
+  // ---------------------------------------------------------
+  if (s >= 6) {
+    stroke(sCol[6]); strokeWeight(1.5);
+    // Draw hidden/inner lines of sleeve (where it surrounds rod)
+    drawDashedLine(cx - sL/2, cy - rD/2, cx - rodL, cy - rD/2);
+    drawDashedLine(cx - sL/2, cy + rD/2, cx - rodL, cy + rD/2);
+    
+    drawDashedLine(cx + sL/2, cy - rD/2, cx + rodL, cy - rD/2);
+    drawDashedLine(cx + sL/2, cy + rD/2, cx + rodL, cy + rD/2);
+  }
+
+  // ---------------------------------------------------------
+  // STEP 7: Clearances & Slots
+  // ---------------------------------------------------------
+  if (s >= 7) {
+    stroke(sCol[7]); strokeWeight(1.5);
+    // Left Cotter Slots
+    float cL = cx - cOff;
+    line(cL + cWTop + clearD, cy - rD/2, cL + cWBot + clearD, cy + rD/2); // Sleeve slot right
+    line(cL - clearD, cy - rD/2, cL - clearD, cy + rD/2);                 // Rod slot left
+    
+    // Right Cotter Slots
+    float cR = cx + cOff;
+    line(cR - cWTop - clearD, cy - rD/2, cR - cWBot - clearD, cy + rD/2); // Sleeve slot left
+    line(cR + clearD, cy - rD/2, cR + clearD, cy + rD/2);                 // Rod slot right
+  }
+
+  // ---------------------------------------------------------
+  // STEP 8: Side View Setup (Tracking Lines)
+  // ---------------------------------------------------------
+  if (s >= 8) {
+    stroke(sCol[8]); strokeWeight(1);
+    drawDashedLine(cx, cy - sD/2, cx2, cy - sD/2);
+    drawDashedLine(cx, cy + sD/2, cx2, cy + sD/2);
+    drawDashedLine(cx, cy - rD/2, cx2, cy - rD/2);
+    drawDashedLine(cx, cy + rD/2, cx2, cy + rD/2);
+  }
+
+  // ---------------------------------------------------------
+  // STEP 9: Side View Concentric Circles
+  // ---------------------------------------------------------
+  if (s >= 9) {
+    stroke(sCol[9]); strokeWeight(sw);
+    ellipse(cx2, cy, sD, sD);             // Outer Sleeve Profile (Ø44)
+    ellipse(cx2, cy, rD, rD);             // Inner Bore Profile (Ø25)
+  }
+
+  // ---------------------------------------------------------
+  // STEP 10: Side View Cotter Profile
+  // ---------------------------------------------------------
+  if (s >= 10) {
+    stroke(sCol[10]); strokeWeight(sw);
+    float ctW = 6 * sc; // Cotter width in side profile
+    float tY = cy - cH/2; float bY = cy + cH/2;
+    
+    // Outer bounds (Solid lines where protruding from sleeve)
+    line(cx2 - ctW/2, tY, cx2 - ctW/2, cy - sD/2);
+    line(cx2 + ctW/2, tY, cx2 + ctW/2, cy - sD/2);
+    line(cx2 - ctW/2, cy + sD/2, cx2 - ctW/2, bY);
+    line(cx2 + ctW/2, cy + sD/2, cx2 + ctW/2, bY);
+    
+    // Cotter Ends
+    arc(cx2, tY, ctW, 6*sc, PI, TWO_PI);
+    arc(cx2, bY, ctW, 6*sc, 0, PI);
+    line(cx2 - ctW/2, tY, cx2 + ctW/2, tY); // Flattened tip edges
+    line(cx2 - ctW/2, bY, cx2 + ctW/2, bY); 
+    
+    // Hidden internal path passing through sleeve and rod (Dashed lines)
+    strokeWeight(1.5);
+    drawDashedLine(cx2 - ctW/2, cy - sD/2, cx2 - ctW/2, cy + sD/2);
+    drawDashedLine(cx2 + ctW/2, cy - sD/2, cx2 + ctW/2, cy + sD/2);
+  }
+
+  // ---------------------------------------------------------
+  // STEP 11: Dimensioning (Widths, Distances & Heights)
+  // ---------------------------------------------------------
+  if (s >= 11) {
+    stroke(sCol[11]); fill(sCol[11]);
+    
+    // Front View Dimensions
+    drawLinearDim(cx - cOff, cy - cH/2 - 15, cx - cOff + cWTop, cy - cH/2 - 15, "28", false);
+    drawLinearDim(cx - cOff, cy + cH/2 + 15, cx - cOff + cWBot, cy + cH/2 + 15, "25", false);
+    drawLinearDim(cx - cOff - 18*sc, cy - cH/2, cx - cOff - 18*sc, cy + cH/2, "65", true);
+    drawLinearDim(cx - sL/2, cy + cH/2 + 35, cx - cOff, cy + cH/2 + 35, "25", false); // Sleeve end to Cotter Center
+    
+    // Side View Dimension (Width 6 at the bottom)
+    float ctW = 6 * sc;
+    float bY = cy + cH/2;
+    drawLinearDim(cx2 - ctW/2, bY + 15, cx2 + ctW/2, bY + 15, "6", false);
+  }
+
+  // ---------------------------------------------------------
+  // STEP 12: Dimensioning (Diameters & Clearances)
+  // ---------------------------------------------------------
+  if (s >= 12) {
+    stroke(sCol[12]); fill(sCol[12]);
+    
+    // Side view diameter
+    drawLeaderDim(cx2, cy, sD/2, -45, "Ø44", 35);
+    
+    // Front view Clearance & Chamfer labels
+    drawLeaderDim(cx + cOff - cWTop - clearD, cy - rD/2, 5, -135, "Clearance 3.0", 45);
+    drawLeaderDim(cx + sL/2, cy - sD/2, 5, 45, "2x45°", 35);
+  }
+
+  // ---------------------------------------------------------
+  // STEP 13: Final Polish (Solid masks to establish foreground)
+  // ---------------------------------------------------------
+  if (s >= 13) {
+    fill(245, 248, 250); stroke(10); strokeWeight(sw);
+    
+    // Mask Front View Left Cotter
+    float cL = cx - cOff; float tY = cy - cH/2; float bY = cy + cH/2;
+    beginShape();
+    vertex(cL, tY); vertex(cL + cWTop, tY); vertex(cL + cWBot, bY); vertex(cL, bY);
+    endShape(CLOSE);
+    arc(cL + cWTop/2, tY, cWTop, 12*sc, PI, TWO_PI); arc(cL + cWBot/2, bY, cWBot, 12*sc, 0, PI);
+    line(cL, tY, cL + cWTop, tY); line(cL, bY, cL + cWBot, bY);
+
+    // Mask Front View Right Cotter
+    float cR = cx + cOff;
+    beginShape();
+    vertex(cR, tY); vertex(cR - cWTop, tY); vertex(cR - cWBot, bY); vertex(cR, bY);
+    endShape(CLOSE);
+    arc(cR - cWTop/2, tY, cWTop, 12*sc, PI, TWO_PI); arc(cR - cWBot/2, bY, cWBot, 12*sc, 0, PI);
+    line(cR, tY, cR - cWTop, tY); line(cR, bY, cR - cWBot, bY);
+    
+    // Mask Side View Protrusions (Do not mask internal slot to preserve dashed lines)
+    float ctW = 6 * sc;
+    // Top Protrusion Mask
+    rect(cx2 - ctW/2, tY, ctW, cy - sD/2 - tY);
+    arc(cx2, tY, ctW, 6*sc, PI, TWO_PI);
+    // Bottom Protrusion Mask
+    rect(cx2 - ctW/2, cy + sD/2, ctW, bY - (cy + sD/2));
+    arc(cx2, bY, ctW, 6*sc, 0, PI);
+    
+    noFill();
+  }
+
+  popStyle();
+}
+
+// =========================================================
+// UI, PROJECTIONS & HELPERS
+// =========================================================
+
+void drawLinearDim(float x1, float y1, float x2, float y2, String txt, boolean isVertical) {
+  stroke(50); fill(50); textAlign(CENTER, BOTTOM); textSize(13);
+  float d = dist(x1, y1, x2, y2);
+  
+  if (d < 30) {
+    // For small dimensions (like the "6"), draw arrows outside pointing inwards
+    line(x1, y1, x2, y2);
+    pushMatrix(); translate(x1, y1); rotate(atan2(y2-y1, x2-x1)); line(0,0, -12, 0); triangle(0, 0, -8, -3, -8, 3); popMatrix();
+    pushMatrix(); translate(x2, y2); rotate(atan2(y1-y2, x1-x2)); line(0,0, -12, 0); triangle(0, 0, -8, -3, -8, 3); popMatrix();
+  } else {
+    // Normal dimension arrows
+    line(x1, y1, x2, y2); 
+    pushMatrix(); translate(x1, y1); rotate(atan2(y2-y1, x2-x1)); triangle(0, 0, 8, -3, 8, 3); popMatrix();
+    pushMatrix(); translate(x2, y2); rotate(atan2(y1-y2, x1-x2)); triangle(0, 0, 8, -3, 8, 3); popMatrix();
+  }
+  
+  if (isVertical) {
+    pushMatrix(); translate(x1 - 6, (y1+y2)/2); rotate(-HALF_PI); text(txt, 0, 0); popMatrix();
+    line(x1, y1, x1 - 15, y1); line(x2, y2, x2 - 15, y2);
+  } else {
+    text(txt, (x1+x2)/2, y1 - 4);
+    line(x1, y1, x1, y1 + (y1 < height/2 ? -15 : 15)); 
+    line(x2, y2, x2, y2 + (y2 < height/2 ? -15 : 15));
+  }
+}
+
+void drawLeaderDim(float dX, float dY, float radius, float angleDeg, String txt, float lineLen) {
+  float a = radians(angleDeg);
+  float ex = dX + cos(a) * radius; float ey = dY + sin(a) * radius;
+  float px = ex + cos(a) * lineLen; float py = ey + sin(a) * lineLen;
+  
+  stroke(50); fill(50); strokeWeight(1.2);
+  line(ex, ey, px, py); 
+  pushMatrix(); translate(ex, ey); rotate(a + PI); triangle(0, 0, 8, -3, 8, 3); popMatrix();
+  
+  float tailEnd = (cos(a) > 0) ? px + 45 : px - 45;
+  line(px, py, tailEnd, py);
+  textAlign((cos(a) > 0) ? LEFT : RIGHT, BOTTOM); textSize(13);
+  text(txt, (cos(a) > 0) ? px + 4 : px - 4, py - 4);
+}
+
+void drawUI() {
+  fill(30); noStroke(); rect(0, 0, width, 80);
+  fill(255); textSize(20); textAlign(LEFT, CENTER);
+  text("INTERACTIVE DRAFTING: SLEEVE & COTTER JOINT ASSEMBLY", 20, 25);
+  fill(0, 200, 255); textSize(16);
+  text("TAP screen to advance to the next step.", 20, 55);
+  
+  fill(255, 255, 255, 240); stroke(200); strokeWeight(2);
+  rect(20, height - 70, width - 40, 50, 10);
+  fill(sCol[step]); textSize(16);
+  text(instructions[step], 40, height - 45);
+  
+  fill(0, 120); textSize(18); textAlign(CENTER, CENTER);
+  text("FRONT ASSEMBLY VIEW", cx, cy + 180);
+  text("RIGHT SIDE VIEW", cx2, cy + 180);
+}
+
+void drawChainLine(float x1, float y1, float x2, float y2) {
+  float d = dist(x1, y1, x2, y2); float angle = atan2(y2-y1, x2-x1);
+  pushMatrix(); translate(x1, y1); rotate(angle); float pos = 0;
+  while(pos < d) {
+    float len = min(20, d - pos); line(pos, 0, pos + len, 0); pos += len + 4;
+    if (pos < d) { line(pos, 0, pos + 2, 0); pos += 6; }
+  }
+  popMatrix();
+}
+
+void drawDashedLine(float x1, float y1, float x2, float y2) {
+  float d = dist(x1, y1, x2, y2); int dashes = max(1, int(d / 8));
+  float dx = (x2 - x1) / dashes; float dy = (y2 - y1) / dashes;
+  for (int i = 0; i < dashes; i += 2) line(x1 + dx * i, y1 + dy * i, x1 + dx * (i + 1), y1 + dy * (i + 1));
+}
+
+void mousePressed() {
+  if (step < maxSteps) step++; else step = 0;
+}
