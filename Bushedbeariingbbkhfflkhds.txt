@@ -1,0 +1,524 @@
+// =========================================================
+// INTERACTIVE X-RAY BUSHED BEARING WITH DIMENSIONS
+// Drag finger/mouse to use X-Ray. Tap to advance steps.
+// =========================================================
+
+int step = 0;
+int maxSteps = 13;
+float scale = 1.6; // Scaled for screen viewing
+
+// Interactive Patch
+float patchX, patchY;
+float patchW = 350, patchH = 350;
+
+// Dimensions (Scaled for drawing)
+float bW, bH, cH, rBody, dBoss, dBore, dBush;
+float holeDist, holeDia, reliefW, reliefH, oilDia, filletR;
+float svBaseW, svBossW, svWebW, svBushW;
+
+// Base Numerical Values (For text labels)
+int valBaseW = 230;
+int valHoleDist = 160;
+int valBaseH = 25;
+int valCenterH = 60;
+int valR = 47;
+int valBoss = 66;
+int valBore = 58;
+int valBush = 50;
+int valRelief = 3;
+
+// View Centers
+float cx, cy, scx, scy;
+float baseTop, baseBottom;
+
+void setup() {
+  size(1100, 750);
+  textAlign(LEFT, CENTER);
+  
+  patchX = width / 2;
+  patchY = height / 2;
+  
+  // Calculate scaled drawing proportions
+  bW = 230 * scale;
+  bH = 25 * scale;
+  cH = 60 * scale;
+  rBody = 47 * scale;
+  dBoss = 66 * scale;
+  dBore = 58 * scale;
+  dBush = 50 * scale;
+  holeDist = 160 * scale;
+  holeDia = 16 * scale;
+  reliefW = 100 * scale; 
+  reliefH = 3 * scale;
+  oilDia = 6 * scale;
+  filletR = 5 * scale;
+  
+  svBaseW = 70 * scale;
+  svBossW = 60 * scale;
+  svWebW = 24 * scale;
+  svBushW = 66 * scale;
+  
+  // Placement Centers
+  cx = width * 0.35;       // Front View Center X
+  cy = height * 0.45;      // Front View Center Y (Center of Bore)
+  scx = width * 0.80;      // Side View Center X
+  scy = cy;                // Side View Center Y
+  
+  baseBottom = cy + cH;
+  baseTop = baseBottom - bH;
+}
+
+void draw() {
+  background(245, 248, 250); // Light blueprint paper
+  
+  // Smoothly track mouse/finger for the X-Ray Scanner
+  patchX = lerp(patchX, mouseX, 0.2);
+  patchY = lerp(patchY, mouseY, 0.2);
+
+  // 1. DRAW BASE LAYER (Thin lines, Dotted internals)
+  drawModel(step, false);
+  
+  // 2. DRAW RED PROJECTION LINES (Only on base layer)
+  drawConstructionData(step);
+
+  // 3. CREATE X-RAY CLIP MASK
+  pushMatrix();
+  clip(patchX - patchW/2, patchY - patchH/2, patchW, patchH);
+  
+  // 4. DRAW X-RAY LAYER (Thick lines, Hatching, Solid internals)
+  fill(255); noStroke(); 
+  rect(patchX - patchW/2, patchY - patchH/2, patchW, patchH); // Clear patch background
+  
+  // X-Ray Hatching goes underneath the main lines
+  if (step >= 8) drawHatching(step, true);
+  
+  drawModel(step, true);
+  
+  noClip();
+  popMatrix();
+  
+  // 5. DRAW DIMENSIONS (Overlayed on top of everything)
+  drawDimensions(step);
+  
+  // 6. DRAW UI AND SCANNER BORDER
+  drawScannerBorder();
+  drawUI();
+}
+
+// =========================================================
+// UNIFIED DRAFTING FUNCTION (Handles both Base and X-Ray)
+// =========================================================
+void drawModel(int s, boolean isXRay) {
+  pushStyle();
+  
+  float sw = isXRay ? 3.0 : 1.5;         
+  color sc = isXRay ? color(0) : color(60); 
+  
+  stroke(sc);
+  strokeWeight(sw);
+  noFill();
+
+  // STEP 0: Centerlines
+  if (s >= 0) {
+    stroke(isXRay ? color(200, 0, 0) : color(100)); strokeWeight(1);
+    drawChainLine(cx - 200, cy, scx + 150, cy);       
+    drawChainLine(cx, cy - 150, cx, baseBottom + 50);        
+    drawChainLine(scx, scy - 150, scx, baseBottom + 50);
+    // Base hole centerlines
+    drawChainLine(cx - holeDist/2, baseTop - 20, cx - holeDist/2, baseBottom + 20);
+    drawChainLine(cx + holeDist/2, baseTop - 20, cx + holeDist/2, baseBottom + 20);
+  }
+
+  // STEP 1 & 2: Base Block, Relief & Holes
+  if (s >= 1) {
+    stroke(sc); strokeWeight(sw);
+    // Left Base Pad
+    line(cx - bW/2, baseTop, cx - bW/2, baseBottom);
+    line(cx - bW/2, baseBottom, cx - reliefW/2, baseBottom);
+    if (s >= 2) {
+      line(cx - reliefW/2, baseBottom, cx - reliefW/2, baseBottom - reliefH);
+      line(cx - reliefW/2, baseBottom - reliefH, cx + reliefW/2, baseBottom - reliefH);
+      line(cx + reliefW/2, baseBottom - reliefH, cx + reliefW/2, baseBottom);
+    } else {
+      line(cx - reliefW/2, baseBottom, cx + reliefW/2, baseBottom);
+    }
+    // Right Base Pad
+    line(cx + reliefW/2, baseBottom, cx + bW/2, baseBottom);
+    line(cx + bW/2, baseBottom, cx + bW/2, baseTop);
+    
+    // Top base lines (leaving gap for upright web)
+    line(cx - bW/2, baseTop, cx - rBody - filletR, baseTop);
+    line(cx + rBody + filletR, baseTop, cx + bW/2, baseTop);
+  }
+  
+  if (s >= 2) {
+    // Mounting Holes
+    if (isXRay) {
+      // In X-Ray front view, we show solid internal lines for holes
+      line(cx - holeDist/2 - holeDia/2, baseTop, cx - holeDist/2 - holeDia/2, baseBottom);
+      line(cx - holeDist/2 + holeDia/2, baseTop, cx - holeDist/2 + holeDia/2, baseBottom);
+      line(cx + holeDist/2 - holeDia/2, baseTop, cx + holeDist/2 - holeDia/2, baseBottom);
+      line(cx + holeDist/2 + holeDia/2, baseTop, cx + holeDist/2 + holeDia/2, baseBottom);
+    } else {
+      drawDashedLine(cx - holeDist/2 - holeDia/2, baseTop, cx - holeDist/2 - holeDia/2, baseBottom);
+      drawDashedLine(cx - holeDist/2 + holeDia/2, baseTop, cx - holeDist/2 + holeDia/2, baseBottom);
+      drawDashedLine(cx + holeDist/2 - holeDia/2, baseTop, cx + holeDist/2 - holeDia/2, baseBottom);
+      drawDashedLine(cx + holeDist/2 + holeDia/2, baseTop, cx + holeDist/2 + holeDia/2, baseBottom);
+    }
+  }
+
+  // STEP 3 & 4: Central Web, Fillets & Outer Arc
+  if (s >= 3) {
+    stroke(sc); strokeWeight(sw);
+    // Vertical webs tangent to arc
+    line(cx - rBody, cy, cx - rBody, baseTop - filletR);
+    line(cx + rBody, cy, cx + rBody, baseTop - filletR);
+    // Fillets
+    arc(cx - rBody - filletR, baseTop - filletR, 2*filletR, 2*filletR, 0, HALF_PI);
+    arc(cx + rBody + filletR, baseTop - filletR, 2*filletR, 2*filletR, HALF_PI, PI);
+  }
+  
+  if (s >= 4) {
+    // Outer Arc R47
+    arc(cx, cy, rBody*2, rBody*2, PI, TWO_PI);
+  }
+
+  // STEP 5: Body Boss and Bore
+  if (s >= 5) {
+    stroke(sc); strokeWeight(sw);
+    ellipse(cx, cy, dBoss, dBoss);
+    
+    if (isXRay && s >= 8) {
+      // Internal lines become solid if cut
+      ellipse(cx, cy, dBore, dBore);
+    } else {
+      drawDashedCircle(cx, cy, dBore);
+    }
+  }
+
+  // STEP 6: Brass Bush
+  if (s >= 6) {
+    stroke(sc); strokeWeight(sw);
+    if (isXRay) {
+      ellipse(cx, cy, dBush, dBush);
+    } else {
+      drawDashedCircle(cx, cy, dBush);
+    }
+    // If not x-ray, make bore solid now as bush is inserted
+    if (!isXRay && s >= 6) ellipse(cx, cy, dBore, dBore); 
+  }
+
+  // STEP 7: Oil Hole
+  if (s >= 7) {
+    stroke(sc); strokeWeight(sw);
+    float ohY = cy - rBody;
+    if (isXRay) {
+      line(cx - oilDia/2, ohY + 3*scale, cx - oilDia/2, cy - dBush/2);
+      line(cx + oilDia/2, ohY + 3*scale, cx + oilDia/2, cy - dBush/2);
+      // Countersink
+      line(cx - oilDia, ohY, cx - oilDia/2, ohY + 3*scale);
+      line(cx + oilDia, ohY, cx + oilDia/2, ohY + 3*scale);
+    } else {
+      drawDashedLine(cx - oilDia/2, ohY + 3*scale, cx - oilDia/2, cy - dBush/2);
+      drawDashedLine(cx + oilDia/2, ohY + 3*scale, cx + oilDia/2, cy - dBush/2);
+      drawDashedLine(cx - oilDia, ohY, cx - oilDia/2, ohY + 3*scale);
+      drawDashedLine(cx + oilDia, ohY, cx + oilDia/2, ohY + 3*scale);
+    }
+  }
+
+  // STEP 10: Side View Base & Web
+  if (s >= 10) {
+    stroke(sc); strokeWeight(sw);
+    // Base outline
+    rect(scx - svBaseW/2, baseTop, svBaseW, bH);
+    if (isXRay) {
+      line(scx - svWebW/2, cy - rBody, scx - svWebW/2, baseTop);
+      line(scx + svWebW/2, cy - rBody, scx + svWebW/2, baseTop);
+      line(scx - svWebW/2, baseTop, scx + svWebW/2, baseTop); // Remove line across base
+    } else {
+      line(scx - svWebW/2, cy, scx - svWebW/2, baseTop);
+      line(scx + svWebW/2, cy, scx + svWebW/2, baseTop);
+    }
+  }
+
+  // STEP 11: Side View Boss & Bore
+  if (s >= 11) {
+    stroke(sc); strokeWeight(sw);
+    rect(scx - svBossW/2, cy - dBoss/2, svBossW, dBoss);
+    if (isXRay) {
+      line(scx - svBossW/2, cy - dBore/2, scx + svBossW/2, cy - dBore/2);
+      line(scx - svBossW/2, cy + dBore/2, scx + svBossW/2, cy + dBore/2);
+    } else {
+      drawDashedLine(scx - svBossW/2, cy - dBore/2, scx + svBossW/2, cy - dBore/2);
+      drawDashedLine(scx - svBossW/2, cy + dBore/2, scx + svBossW/2, cy + dBore/2);
+    }
+  }
+
+  // STEP 12: Side View Bush
+  if (s >= 12) {
+    stroke(sc); strokeWeight(sw);
+    rect(scx - svBushW/2, cy - dBore/2, svBushW, dBore);
+    if (isXRay) {
+      line(scx - svBushW/2, cy - dBush/2, scx + svBushW/2, cy - dBush/2);
+      line(scx - svBushW/2, cy + dBush/2, scx + svBushW/2, cy + dBush/2);
+    } else {
+      drawDashedLine(scx - svBushW/2, cy - dBush/2, scx + svBushW/2, cy - dBush/2);
+      drawDashedLine(scx - svBushW/2, cy + dBush/2, scx + svBushW/2, cy + dBush/2);
+    }
+  }
+
+  // STEP 13: Side View Oil Hole
+  if (s >= 13) {
+    stroke(sc); strokeWeight(sw);
+    if (isXRay) {
+      line(scx - oilDia/2, cy - rBody + 3*scale, scx - oilDia/2, cy - dBush/2);
+      line(scx + oilDia/2, cy - rBody + 3*scale, scx + oilDia/2, cy - dBush/2);
+      line(scx - oilDia, cy - rBody, scx - oilDia/2, cy - rBody + 3*scale);
+      line(scx + oilDia, cy - rBody, scx + oilDia/2, cy - rBody + 3*scale);
+    } else {
+      drawDashedLine(scx - oilDia/2, cy - rBody + 3*scale, scx - oilDia/2, cy - dBush/2);
+      drawDashedLine(scx + oilDia/2, cy - rBody + 3*scale, scx + oilDia/2, cy - dBush/2);
+    }
+  }
+  
+  popStyle();
+}
+
+// =========================================================
+// HATCHING & MASKS (For X-Ray Sectioning)
+// =========================================================
+void drawHatching(int s, boolean isXRay) {
+  if (!isXRay) return;
+  
+  float anim = (frameCount % 32) / 4.0;  
+  color castIronHatch = color(110, 130, 150);
+  color brassHatch = color(180, 150, 50);
+
+  // --- FRONT VIEW SECTION ---
+  if (s >= 8) {
+    // Hatch Base
+    hatchArea(cx - bW/2, baseTop, bW, bH, 1, castIronHatch, anim);
+    // Hatch Web/Boss area
+    hatchArea(cx - rBody, cy - rBody, rBody*2, cH + rBody, 1, castIronHatch, anim);
+    
+    // Mask out holes using solid white
+    fill(255); noStroke();
+    ellipse(cx, cy, dBore, dBore); // Main bore mask
+    
+    // Base Holes mask
+    rect(cx - holeDist/2 - holeDia/2, baseTop - 2, holeDia, bH + 4);
+    rect(cx + holeDist/2 - holeDia/2, baseTop - 2, holeDia, bH + 4);
+    
+    // Bottom Relief mask
+    rect(cx - reliefW/2, baseBottom - reliefH, reliefW, reliefH + 2);
+    
+    // Oil Hole mask
+    rect(cx - oilDia/2, cy - rBody, oilDia, rBody);
+    triangle(cx - oilDia, cy - rBody, cx + oilDia, cy - rBody, cx, cy - rBody + 5*scale);
+  }
+  
+  // Hatch Bush
+  if (s >= 9) {
+    hatchArea(cx - dBore/2, cy - dBore/2, dBore, dBore, -1, brassHatch, anim);
+    fill(255); noStroke();
+    ellipse(cx, cy, dBush, dBush); // Bush ID mask
+    // Oil hole through bush
+    rect(cx - oilDia/2, cy - dBore/2, oilDia, (dBore-dBush)/2); 
+  }
+  
+  // --- SIDE VIEW SECTION ---
+  if (s >= 10) {
+    // Hatch Base
+    hatchArea(scx - svBaseW/2, baseTop, svBaseW, bH, 1, castIronHatch, anim);
+    // Hatch Web
+    hatchArea(scx - svWebW/2, cy - rBody, svWebW, cH + rBody, 1, castIronHatch, anim);
+  }
+  if (s >= 11) {
+    // Hatch Boss
+    hatchArea(scx - svBossW/2, cy - dBoss/2, svBossW, dBoss, 1, castIronHatch, anim);
+    fill(255); noStroke();
+    rect(scx - svBossW/2 - 2, cy - dBore/2, svBossW + 4, dBore); // Main bore mask
+    rect(scx - oilDia/2, cy - rBody, oilDia, rBody); // Oil Hole mask
+  }
+  if (s >= 12) {
+    // Hatch Bush
+    hatchArea(scx - svBushW/2, cy - dBore/2, svBushW, dBore, -1, brassHatch, anim);
+    fill(255); noStroke();
+    rect(scx - svBushW/2 - 2, cy - dBush/2, svBushW + 4, dBush); // Bush ID mask
+    rect(scx - oilDia/2, cy - dBore/2, oilDia, (dBore-dBush)/2); // Oil hole in bush
+  }
+}
+
+// =========================================================
+// NUMERICAL DIMENSIONS (Overlayed on top)
+// =========================================================
+void drawDimensions(int s) {
+  pushStyle();
+  stroke(0, 130, 0); fill(0, 130, 0); textSize(14);
+  
+  if (s >= 1) {
+    drawDim(cx - bW/2, baseBottom + 25, cx + bW/2, baseBottom + 25, String.valueOf(valBaseW), false, 15);
+    drawDim(cx - bW/2 - 20, baseTop, cx - bW/2 - 20, baseBottom, String.valueOf(valBaseH), true, -15);
+  }
+  if (s >= 2) {
+    drawDim(cx - holeDist/2, baseBottom + 50, cx + holeDist/2, baseBottom + 50, String.valueOf(valHoleDist), false, 15);
+    drawDim(cx + reliefW/2 + 20, baseBottom - reliefH, cx + reliefW/2 + 20, baseBottom, String.valueOf(valRelief), true, 15);
+  }
+  if (s >= 3) {
+    drawDim(cx + bW/2 + 20, cy, cx + bW/2 + 20, baseBottom, String.valueOf(valCenterH), true, 15);
+  }
+  if (s >= 4) {
+    drawDimLineOnly(cx, cy, cx + rBody*0.707, cy - rBody*0.707, "R" + valR);
+  }
+  if (s >= 5) {
+    drawDimLineOnly(cx, cy, cx + dBoss/2*0.9, cy + dBoss/2*0.4, "Ø" + valBoss);
+    drawDimLineOnly(cx, cy, cx + dBore/2, cy, "Ø" + valBore);
+  }
+  if (s >= 6) {
+    drawDimLineOnly(cx, cy, cx - dBush/2*0.707, cy + dBush/2*0.707, "Ø" + valBush);
+  }
+  if (s >= 7) {
+    drawDim(cx - oilDia/2, cy - rBody - 20, cx + oilDia/2, cy - rBody - 20, "Ø6", false, -15);
+  }
+  
+  popStyle();
+}
+
+void drawDim(float x1, float y1, float x2, float y2, String txt, boolean isVert, float textOffset) {
+  strokeWeight(1);
+  if(isVert) { line(x1+10, y1, x1-10, y1); line(x2+10, y2, x2-10, y2); } 
+  else { line(x1, y1+10, x1, y1-10); line(x2, y2+10, x2, y2-10); }
+  
+  strokeWeight(1.5);
+  line(x1, y1, x2, y2);
+  
+  pushMatrix(); translate(x1, y1); rotate(atan2(y2-y1, x2-x1)); line(0,0, 8, 4); line(0,0, 8, -4); popMatrix();
+  pushMatrix(); translate(x2, y2); rotate(atan2(y1-y2, x1-x2)); line(0,0, 8, 4); line(0,0, 8, -4); popMatrix();
+  
+  noStroke();
+  if (isVert) text(txt, x1 + textOffset, (y1+y2)/2);
+  else { textAlign(CENTER, BOTTOM); text(txt, (x1+x2)/2, y1 + textOffset); textAlign(LEFT, CENTER); }
+}
+
+void drawDimLineOnly(float cx, float cy, float ex, float ey, String txt) {
+  strokeWeight(1.5); line(cx, cy, ex, ey);
+  pushMatrix(); translate(ex, ey); rotate(atan2(cy-ey, cx-ex)); line(0,0, 8, 4); line(0,0, 8, -4); popMatrix();
+  noStroke(); text(txt, ex + (ex>cx?5:-25), ey + (ey>cy?10:-10));
+}
+
+// =========================================================
+// CONSTRUCTION DATA (Red Projection Lines)
+// =========================================================
+void drawConstructionData(int s) {
+  pushStyle();
+  stroke(255, 0, 0, 150); strokeWeight(1);
+  if (s >= 10) drawProjLine(cx + bW/2, baseTop, scx - svBaseW/2, baseTop);
+  if (s >= 11) {
+    drawProjLine(cx + rBody, cy - rBody, scx - svWebW/2, cy - rBody);
+    drawProjLine(cx + dBoss/2, cy - dBoss/2, scx - svBossW/2, cy - dBoss/2);
+  }
+  if (s >= 12) {
+    drawProjLine(cx + dBore/2, cy - dBore/2, scx - svBushW/2, cy - dBore/2);
+    drawProjLine(cx + dBush/2, cy - dBush/2, scx - svBushW/2, cy - dBush/2);
+  }
+  popStyle();
+}
+
+void drawProjLine(float x1, float y1, float x2, float y2) {
+  float d = dist(x1, y1, x2, y2); float dashes = d / 15;
+  float dx = (x2 - x1) / dashes; float dy = (y2 - y1) / dashes;
+  for (int i = 0; i < dashes; i += 2) line(x1 + dx * i, y1 + dy * i, x1 + dx * (i + 1), y1 + dy * (i + 1));
+}
+
+// =========================================================
+// UI AND SCANNER BORDER
+// =========================================================
+void drawScannerBorder() {
+  pushStyle();
+  fill(0, 150, 255, 10); stroke(0, 150, 255, 200); strokeWeight(4);
+  rect(patchX - patchW/2, patchY - patchH/2, patchW, patchH, 15);
+  
+  strokeWeight(8); float c = 30;
+  float px = patchX - patchW/2; float py = patchY - patchH/2;
+  line(px, py+c, px, py); line(px, py, px+c, py);
+  line(px+patchW, py+c, px+patchW, py); line(px+patchW, py, px+patchW-c, py);
+  line(px, py+patchH-c, px, py+patchH); line(px, py+patchH, px+c, py+patchH);
+  line(px+patchW, py+patchH-c, px+patchW, py+patchH); line(px+patchW, py+patchH, px+patchW-c, py+patchH);
+  
+  strokeWeight(2); stroke(0, 150, 255, 120);
+  line(patchX - 15, patchY, patchX + 15, patchY);
+  line(patchX, patchY - 15, patchX, patchY + 15);
+  popStyle();
+}
+
+void drawUI() {
+  fill(30); noStroke(); rect(0, 0, width, 80);
+  fill(255); textSize(20);
+  text("INTERACTIVE X-RAY DRAFTING: BUSHED BEARING", 20, 25);
+  fill(0, 200, 255); textSize(16);
+  text("DRAG to use X-Ray Scanner. TAP/CLICK screen to advance steps.", 20, 55);
+  
+  fill(255, 255, 255, 230); stroke(200); strokeWeight(2);
+  rect(20, height - 70, width - 40, 50, 10);
+  fill(0); textSize(18);
+  String[] inst = {
+    "Step 0: Lay out Main Centerlines.",
+    "Step 1: Draw the Base Block (Width 230, Height 25).",
+    "Step 2: Add Bottom Relief (depth 3) & Mounting Holes (Distance 160).",
+    "Step 3: Draw Central Web (Width 94) & R5 Fillets meeting the base.",
+    "Step 4: Draw Outer Body Arc (R47) from the center point.",
+    "Step 5: Draw Body Boss (Ø66) and main Body Bore (Ø58).",
+    "Step 6: Insert Brass Bush (OD Ø58, ID Ø50).",
+    "Step 7: Drill Oil Hole (Ø6, 90° Countersink) at Top.",
+    "Step 8: (X-RAY) Hatch the Cast Iron Body.",
+    "Step 9: (X-RAY) Hatch the Brass Bush inside Bore.",
+    "Step 10: SIDE VIEW - Project Base & Web profile.",
+    "Step 11: SIDE VIEW - Project Boss & Bore profile.",
+    "Step 12: SIDE VIEW - Project Bush inside Bore.",
+    "Step 13: SIDE VIEW - Project Top Oil Hole."
+  };
+  text(inst[step], 40, height - 45);
+  
+  fill(0, 100); textSize(18);
+  text("FRONT VIEW", cx - 50, baseBottom + 85);
+  text("SIDE VIEW (Section)", scx - 80, baseBottom + 85);
+}
+
+// =========================================================
+// HELPER DRAWING FUNCTIONS
+// =========================================================
+void drawChainLine(float x1, float y1, float x2, float y2) {
+  float d = dist(x1, y1, x2, y2); float angle = atan2(y2-y1, x2-x1);
+  pushMatrix(); translate(x1, y1); rotate(angle); float pos = 0;
+  while(pos < d) {
+    float len = min(20, d - pos); line(pos, 0, pos + len, 0); pos += len + 5;
+    if (pos < d) { line(pos, 0, pos + 2, 0); pos += 7; }
+  }
+  popMatrix();
+}
+
+void drawDashedLine(float x1, float y1, float x2, float y2) {
+  float d = dist(x1, y1, x2, y2); int dashes = max(1, int(d / 8));
+  float dx = (x2 - x1) / dashes; float dy = (y2 - y1) / dashes;
+  for (int i = 0; i < dashes; i += 2) { line(x1 + dx * i, y1 + dy * i, x1 + dx * (i + 1), y1 + dy * (i + 1)); }
+}
+
+void drawDashedCircle(float px, float py, float dia) {
+  float circ = PI * dia; int dashes = max(8, int(circ / 10)); float angleStep = TWO_PI / dashes;
+  for(int i = 0; i < dashes; i+=2) {
+    arc(px, py, dia, dia, i * angleStep, (i+1) * angleStep);
+  }
+}
+
+void hatchArea(float x, float y, float w, float h, int dir, color c, float offset) {
+  pushStyle(); stroke(c); strokeWeight(2); clip(x, y, w, h);
+  for(float i = -w - h; i < w + h; i += 8) {
+    float o = i + (dir > 0 ? offset : -offset);
+    if(dir > 0) line(x + o, y, x + o + h, y + h); else line(x + o, y + h, x + o + h, y);
+  }
+  noClip(); popStyle();
+}
+
+void mousePressed() {
+  if (step < maxSteps) step++; else step = 0;
+}
