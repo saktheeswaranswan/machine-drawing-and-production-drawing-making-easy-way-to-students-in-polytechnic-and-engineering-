@@ -1,0 +1,490 @@
+// =========================================================
+// INTERACTIVE DRAFTING: PLUMMER BLOCK (FULL ASSEMBLY)
+// Layout: Front/Top Views (Left), Parts (Center), Assembly Side View (Right)
+// Includes standard Left Half Sectional Side View geometry
+// No Hatching as per explicit instructions
+// =========================================================
+
+int step = 0;
+int maxSteps = 13; 
+float sc = 1.6; // Scale multiplier
+
+// --- Dimensions ---
+float totalL, baseH, totalW, upW, upH;
+float innerGap, gapH, seatR, outerR;
+float holeDist, holeDia, recessW, recessH;
+float slotDist, slotL, slotW;
+float filletR, oilD1, oilD2;
+float brR1, brR2, brR3, brW1, brW2, brH, brOilD;
+float boL, boD, boThL, boHdW, boHdH;
+float nutD, nutW, nutH1, nutH2;
+
+// --- View Coordinates ---
+float cx, cyF, cyT, baseBot, flangeTop, upTop, capTop;
+float cx2, cyBr, cyBo, cyNu;
+float cx3, cy3; // New Assembly Side View Coordinates
+
+// --- UI & Colors ---
+color[] sCol = new color[14];
+String[] instructions = new String[14];
+
+void setup() {
+  size(1250, 850);
+  
+  // CALCULATE EXACT DIMENSIONS
+  totalL = 208 * sc;         totalW = 46 * sc;          
+  baseH = 14 * sc;           upW = 108 * sc;            
+  innerGap = 56 * sc;        gapH = 16 * sc;            
+  seatR = 24 * sc;           outerR = 54 * sc;          
+  holeDist = 78 * sc;        holeDia = 14 * sc;         
+  recessW = 26 * sc;         recessH = 10 * sc;         
+  slotDist = 162 * sc;       slotL = 20 * sc;           
+  slotW = 12 * sc;           filletR = 8 * sc;          
+  oilD1 = 8 * sc;            oilD2 = 16 * sc;           
+  
+  brR1 = 16 * sc;            brR2 = 24 * sc;            
+  brR3 = 32 * sc;            brW1 = 56 * sc;            
+  brW2 = 78 * sc;            brH = 12 * sc;             
+  brOilD = 14 * sc;          
+  
+  boL = 104 * sc;            boD = 12 * sc;             
+  boThL = 35 * sc;           boHdW = 24 * sc;           
+  boHdH = 8 * sc;            
+  
+  nutD = 12 * sc;            nutW = 24 * sc;            
+  nutH1 = 12 * sc;           nutH2 = 8 * sc;            
+  
+  // LAYOUT COORDINATES
+  cx = width * 0.22;         // Left Column (Base & Cap)
+  cyF = 260;                 
+  cyT = 660;                 
+  
+  baseBot = cyF + 48 * sc;   
+  flangeTop = baseBot - baseH; 
+  upTop = cyF - 20 * sc;     
+  capTop = cyF - 54 * sc;    
+
+  cx2 = width * 0.52;        // Center Column (Parts)
+  cyBr = 180;
+  cyBo = 450;
+  cyNu = 680;
+  
+  cx3 = width * 0.84;        // Right Column (Assembly Side View)
+  cy3 = cyF;
+
+  // INITIALIZE COLORS
+  sCol[0] = color(200, 50, 50);    sCol[1] = color(0, 100, 200);
+  sCol[2] = color(0, 150, 50);     sCol[3] = color(100, 0, 200);
+  sCol[4] = color(200, 0, 150);    sCol[5] = color(0, 150, 150);
+  sCol[6] = color(200, 100, 0);    sCol[7] = color(150, 100, 50);
+  sCol[8] = color(50, 100, 150);   sCol[9] = color(200, 150, 0);
+  sCol[10]= color(120, 80, 200);   sCol[11]= color(160, 80, 120);
+  sCol[12]= color(80, 120, 160);   sCol[13]= color(140, 140, 40);
+
+  instructions[0] = "Step 0: Lay out primary centerlines for all views.";
+  instructions[1] = "Step 1: Draw the Base Flanges.";
+  instructions[2] = "Step 2: Draw the Upright Pillars.";
+  instructions[3] = "Step 3: Draw the central Bearing Seat.";
+  instructions[4] = "Step 4: Draw the Outer Boss curves.";
+  instructions[5] = "Step 5: Draw the Base Mounting Slots.";
+  instructions[6] = "Step 6: Draw the main Ø14 Bolt Holes.";
+  instructions[7] = "Step 7: Draw the Square Recesses for the bolt heads.";
+  instructions[8] = "Step 8: Draw the Cap.";
+  instructions[9] = "Step 9: Draw the top Oil Hole.";
+  instructions[10]= "Step 10: Draw the Brasses (Half Bearing) Front Section.";
+  instructions[11]= "Step 11: Draw the Brasses Side/End Profile.";
+  instructions[12]= "Step 12: Draw the M12 Square Head Bolt.";
+  instructions[13]= "Step 13: Draw the M12 Hex Nut & Lock Nut.";
+}
+
+void draw() {
+  background(245, 248, 250); 
+  drawModel(step);
+  drawUI();
+}
+
+void drawModel(int s) {
+  pushStyle();
+  float sw = 2.0; 
+  noFill();
+
+  // ---------------------------------------------------------
+  // STEP 0: Centerlines
+  // ---------------------------------------------------------
+  if (s >= 0) {
+    stroke(sCol[0]); strokeWeight(1);
+    // Base & Cap View
+    drawChainLine(cx - totalL/2 - 30, cyF, cx + totalL/2 + 30, cyF);       
+    drawChainLine(cx, capTop - 20, cx, baseBot + 20);               
+    drawChainLine(cx - totalL/2 - 30, cyT, cx + totalL/2 + 30, cyT);
+    drawChainLine(cx, cyT - totalW/2 - 30, cx, cyT + totalW/2 + 30);
+    drawChainLine(cx - holeDist/2, capTop - 10, cx - holeDist/2, baseBot + 10);
+    drawChainLine(cx + holeDist/2, capTop - 10, cx + holeDist/2, baseBot + 10);
+    drawChainLine(cx - holeDist/2, cyT - 30, cx - holeDist/2, cyT + 30);
+    drawChainLine(cx + holeDist/2, cyT - 30, cx + holeDist/2, cyT + 30);
+    // Brasses View
+    drawChainLine(cx2 - 120, cyBr, cx2 + 120, cyBr);
+    drawChainLine(cx2 - 50, cyBr - 60, cx2 - 50, cyBr + 60);
+    drawChainLine(cx2 + 50, cyBr - 60, cx2 + 50, cyBr + 60);
+    // Bolt View
+    drawChainLine(cx2 - 100, cyBo, cx2 + 100, cyBo);
+    // Nut View
+    drawChainLine(cx2 - 120, cyNu, cx2 + 120, cyNu);
+    drawChainLine(cx2 - 50, cyNu - 40, cx2 - 50, cyNu + 40);
+    drawChainLine(cx2 + 50, cyNu - 40, cx2 + 50, cyNu + 40);
+    // Assembly Side View (cx3)
+    drawChainLine(cx3, capTop - 40, cx3, baseBot + 20);
+    drawChainLine(cx3 - 60, cy3, cx3 + 60, cy3);
+  }
+
+  // ---------------------------------------------------------
+  // STEP 1 - 9: BASE & CAP
+  // ---------------------------------------------------------
+  if (s >= 1) {
+    stroke(sCol[1]); strokeWeight(sw);
+    line(cx - totalL/2, baseBot, cx + totalL/2, baseBot);           
+    line(cx - totalL/2, baseBot, cx - totalL/2 + 5*sc, flangeTop);  
+    line(cx + totalL/2, baseBot, cx + totalL/2 - 5*sc, flangeTop);  
+    line(cx - totalL/2 + 5*sc, flangeTop, cx - upW/2, flangeTop);   
+    line(cx + totalL/2 - 5*sc, flangeTop, cx + upW/2, flangeTop);   
+    rect(cx - totalL/2, cyT - totalW/2, totalL, totalW);            
+    drawLinearDim(cx - totalL/2, baseBot + 25, cx + totalL/2, baseBot + 25, "208", false, 0);
+    
+    // Side View (Base Bottom)
+    line(cx3 - 23*sc, baseBot, cx3 - 13*sc, baseBot); // Left
+    line(cx3, baseBot, cx3 + 23*sc, baseBot);         // Right
+  }
+  if (s >= 2) {
+    stroke(sCol[2]); strokeWeight(sw);
+    line(cx - upW/2, flangeTop, cx - upW/2, upTop);                 
+    line(cx + upW/2, flangeTop, cx + upW/2, upTop);                 
+    line(cx - upW/2, upTop, cx - innerGap/2, upTop);                
+    line(cx + upW/2, upTop, cx + innerGap/2, upTop);                
+    line(cx - innerGap/2, upTop, cx - innerGap/2, cyF + 4*sc);      
+    line(cx + innerGap/2, upTop, cx + innerGap/2, cyF + 4*sc);      
+    line(cx - innerGap/2, cyF + 4*sc, cx - seatR, cyF + 4*sc);      
+    line(cx + innerGap/2, cyF + 4*sc, cx + seatR, cyF + 4*sc);      
+    line(cx - upW/2, cyT - totalW/2, cx - upW/2, cyT + totalW/2);   
+    line(cx + upW/2, cyT - totalW/2, cx + upW/2, cyT + totalW/2);   
+    
+    // Side View (Upright Outline)
+    line(cx3 - 23*sc, baseBot, cx3 - 23*sc, upTop);    // Left Outer
+    line(cx3 + 23*sc, baseBot, cx3 + 23*sc, upTop);    // Right Outer
+    line(cx3 - 23*sc, upTop, cx3 - 7*sc, upTop);       // Left Split
+    line(cx3, upTop, cx3 + 23*sc, upTop);              // Right Split
+  }
+  if (s >= 3) {
+    stroke(sCol[3]); strokeWeight(sw);
+    arc(cx, cyF + 4*sc, seatR*2, seatR*2, 0, PI);                   
+    strokeWeight(1.5);
+    drawDashedLine(cx - seatR, cyT - totalW/2, cx - seatR, cyT + totalW/2);
+    drawDashedLine(cx + seatR, cyT - totalW/2, cx + seatR, cyT + totalW/2);
+  }
+  if (s >= 4) {
+    stroke(sCol[4]); strokeWeight(sw);
+    float trimAngle = asin((totalW/2) / outerR);
+    arc(cx, cyT, outerR*2, outerR*2, -trimAngle, trimAngle);
+    arc(cx, cyT, outerR*2, outerR*2, PI - trimAngle, PI + trimAngle);
+    fill(245, 248, 250); noStroke();
+    rect(cx - upW/2 + 2, cyT - totalW/2 + 2, upW - 4, totalW - 4);
+    noFill(); stroke(sCol[2]); 
+    line(cx - upW/2, cyT - totalW/2, cx - upW/2, cyT + totalW/2);   
+    line(cx + upW/2, cyT - totalW/2, cx + upW/2, cyT + totalW/2);   
+  }
+  if (s >= 5) {
+    stroke(sCol[5]); strokeWeight(sw);
+    float sl = cx - slotDist/2; float sr = cx + slotDist/2; float strLen = slotL - slotW;
+    line(sl - strLen/2, cyT - slotW/2, sl + strLen/2, cyT - slotW/2); line(sl - strLen/2, cyT + slotW/2, sl + strLen/2, cyT + slotW/2);
+    arc(sl - strLen/2, cyT, slotW, slotW, HALF_PI, PI+HALF_PI); arc(sl + strLen/2, cyT, slotW, slotW, -HALF_PI, HALF_PI);
+    line(sr - strLen/2, cyT - slotW/2, sr + strLen/2, cyT - slotW/2); line(sr - strLen/2, cyT + slotW/2, sr + strLen/2, cyT + slotW/2);
+    arc(sr - strLen/2, cyT, slotW, slotW, HALF_PI, PI+HALF_PI); arc(sr + strLen/2, cyT, slotW, slotW, -HALF_PI, HALF_PI);
+    strokeWeight(1.5);
+    drawDashedLine(sl - slotL/2, flangeTop, sl - slotL/2, baseBot); drawDashedLine(sl + slotL/2, flangeTop, sl + slotL/2, baseBot);
+    drawDashedLine(sr - slotL/2, flangeTop, sr - slotL/2, baseBot); drawDashedLine(sr + slotL/2, flangeTop, sr + slotL/2, baseBot);
+  }
+  if (s >= 6) {
+    stroke(sCol[6]); strokeWeight(sw);
+    float hl = cx - holeDist/2; float hr = cx + holeDist/2;
+    ellipse(hl, cyT, holeDia, holeDia); ellipse(hr, cyT, holeDia, holeDia);
+    strokeWeight(1.5);
+    drawDashedLine(hl - holeDia/2, upTop, hl - holeDia/2, baseBot - recessH); drawDashedLine(hl + holeDia/2, upTop, hl + holeDia/2, baseBot - recessH);
+    drawDashedLine(hr - holeDia/2, upTop, hr - holeDia/2, baseBot - recessH); drawDashedLine(hr + holeDia/2, upTop, hr + holeDia/2, baseBot - recessH);
+    
+    // Side View (Bolt Hole Profiles)
+    strokeWeight(sw);
+    line(cx3 - 7*sc, baseBot - recessH, cx3 - 7*sc, upTop);           // Left (Sectioned Cut)
+    strokeWeight(1.5);
+    drawDashedLine(cx3 + 7*sc, baseBot - recessH, cx3 + 7*sc, upTop); // Right (Hidden)
+  }
+  if (s >= 7) {
+    stroke(sCol[7]); strokeWeight(1.5);
+    float hl = cx - holeDist/2; float hr = cx + holeDist/2;
+    drawDashedLine(hl - recessW/2, cyT - recessW/2, hl + recessW/2, cyT - recessW/2); drawDashedLine(hl - recessW/2, cyT + recessW/2, hl + recessW/2, cyT + recessW/2);
+    drawDashedLine(hl - recessW/2, cyT - recessW/2, hl - recessW/2, cyT + recessW/2); drawDashedLine(hl + recessW/2, cyT - recessW/2, hl + recessW/2, cyT + recessW/2);
+    drawDashedLine(hr - recessW/2, cyT - recessW/2, hr + recessW/2, cyT - recessW/2); drawDashedLine(hr - recessW/2, cyT + recessW/2, hr + recessW/2, cyT + recessW/2);
+    drawDashedLine(hr - recessW/2, cyT - recessW/2, hr - recessW/2, cyT + recessW/2); drawDashedLine(hr + recessW/2, cyT - recessW/2, hr + recessW/2, cyT + recessW/2);
+    drawDashedLine(hl - recessW/2, baseBot, hl - recessW/2, baseBot - recessH); drawDashedLine(hl + recessW/2, baseBot, hl + recessW/2, baseBot - recessH);
+    drawDashedLine(hl - recessW/2, baseBot - recessH, hl + recessW/2, baseBot - recessH);
+    drawDashedLine(hr - recessW/2, baseBot, hr - recessW/2, baseBot - recessH); drawDashedLine(hr + recessW/2, baseBot, hr + recessW/2, baseBot - recessH);
+    drawDashedLine(hr - recessW/2, baseBot - recessH, hr + recessW/2, baseBot - recessH);
+    
+    // Side View (Recess Profiles)
+    strokeWeight(sw);
+    line(cx3 - 13*sc, baseBot, cx3 - 13*sc, baseBot - recessH);            // Left Wall
+    line(cx3 - 13*sc, baseBot - recessH, cx3 - 7*sc, baseBot - recessH);   // Left Roof
+    strokeWeight(1.5);
+    drawDashedLine(cx3, baseBot - recessH, cx3 + 13*sc, baseBot - recessH); // Right Roof
+    drawDashedLine(cx3 + 13*sc, baseBot, cx3 + 13*sc, baseBot - recessH);   // Right Wall
+  }
+  if (s >= 8) {
+    stroke(sCol[8]); strokeWeight(sw);
+    line(cx - upW/2, upTop, cx - upW/2, capTop + 26*sc); line(cx + upW/2, upTop, cx + upW/2, capTop + 26*sc);            
+    float capTrimA = asin((upW/2) / outerR);
+    arc(cx, cyF + 4*sc, outerR*2, outerR*2, PI + capTrimA, TWO_PI - capTrimA);
+    line(cx - innerGap/2, upTop, cx - innerGap/2, upTop + gapH); line(cx + innerGap/2, upTop, cx + innerGap/2, upTop + gapH);    
+    line(cx - innerGap/2, upTop + gapH, cx - seatR, upTop + gapH); line(cx + innerGap/2, upTop + gapH, cx + seatR, upTop + gapH);
+    arc(cx, cyF + 4*sc, seatR*2, seatR*2, PI, TWO_PI);              
+    line(cx - upW/2, cyT - totalW/2, cx - upW/2, cyT + totalW/2); line(cx + upW/2, cyT - totalW/2, cx + upW/2, cyT + totalW/2);
+    
+    // Side View (Cap Outline)
+    line(cx3 - 23*sc, upTop + gapH, cx3 - 23*sc, capTop);       // Left Outer
+    line(cx3 + 23*sc, upTop + gapH, cx3 + 23*sc, capTop);       // Right Outer
+    line(cx3 - 23*sc, upTop + gapH, cx3 - 7*sc, upTop + gapH);  // Left Split
+    line(cx3, upTop + gapH, cx3 + 23*sc, upTop + gapH);         // Right Split
+    line(cx3 - 23*sc, capTop, cx3, capTop);                     // Top Left
+    line(cx3, capTop, cx3 + 23*sc, capTop);                     // Top Right
+    line(cx3 - 7*sc, upTop + gapH, cx3 - 7*sc, capTop);         // Left Hole Cut
+    strokeWeight(1.5);
+    drawDashedLine(cx3 + 7*sc, upTop + gapH, cx3 + 7*sc, capTop); // Right Hidden Hole
+  }
+  if (s >= 9) {
+    stroke(sCol[9]); strokeWeight(sw);
+    ellipse(cx, cyT, oilD1, oilD1); ellipse(cx, cyT, oilD2, oilD2);
+    float holeTopY = capTop; float holeSeatY = cyF + 4*sc - seatR;
+    line(cx - oilD1/2, holeTopY + 4*sc, cx - oilD1/2, holeSeatY); line(cx + oilD1/2, holeTopY + 4*sc, cx + oilD1/2, holeSeatY);
+    line(cx - oilD2/2, holeTopY, cx - oilD1/2, holeTopY + 4*sc); line(cx + oilD2/2, holeTopY, cx + oilD1/2, holeTopY + 4*sc);
+  }
+
+  // ---------------------------------------------------------
+  // STEP 10: BRASSES (Front Section View)
+  // ---------------------------------------------------------
+  if (s >= 10) {
+    float bx = cx2 - 50; 
+    stroke(sCol[10]); strokeWeight(sw);
+    
+    arc(bx, cyBr, brR1*2, brR1*2, PI, TWO_PI);
+    arc(bx, cyBr, brR2*2, brR2*2, PI, TWO_PI);
+    line(bx - brR2, cyBr, bx - brW1/2, cyBr); line(bx + brR2, cyBr, bx + brW1/2, cyBr);
+    line(bx - brW1/2, cyBr, bx - brW1/2, cyBr - brH); line(bx + brW1/2, cyBr, bx + brW1/2, cyBr - brH);
+    line(bx - brW1/2, cyBr - brH, bx - brW2/2, cyBr - brH); line(bx + brW1/2, cyBr - brH, bx + brW2/2, cyBr - brH);
+    line(bx - brW2/2, cyBr - brH, bx - brW2/2, cyBr); line(bx + brW2/2, cyBr - brH, bx + brW2/2, cyBr);
+    line(bx - brW2/2, cyBr, bx - brR1, cyBr); line(bx + brW2/2, cyBr, bx + brR1, cyBr);
+
+    float dipW = brOilD;
+    line(bx - dipW/2, cyBr - brR2, bx - dipW/2, cyBr - brR1); line(bx + dipW/2, cyBr - brR2, bx + dipW/2, cyBr - brR1);
+    
+    // Side View (Brasses Protruding & Cut Left)
+    // Left Half Top
+    line(cx3 - 23*sc, cy3 - 24*sc, cx3 - 28*sc, cy3 - 24*sc); // Body out
+    line(cx3 - 28*sc, cy3 - 24*sc, cx3 - 28*sc, cy3 - 32*sc); // Step up
+    line(cx3 - 28*sc, cy3 - 32*sc, cx3 - 39*sc, cy3 - 32*sc); // Flange top
+    line(cx3 - 39*sc, cy3 - 32*sc, cx3 - 39*sc, cy3);         // Flange outer
+    line(cx3 - 39*sc, cy3 - 16*sc, cx3 - 7*sc, cy3 - 16*sc);  // Bore inner
+    line(cx3 - 23*sc, cy3 - 24*sc, cx3 - 7*sc, cy3 - 24*sc);  // Body inner cut
+    // Left Half Bottom
+    line(cx3 - 23*sc, cy3 + 24*sc, cx3 - 28*sc, cy3 + 24*sc);
+    line(cx3 - 28*sc, cy3 + 24*sc, cx3 - 28*sc, cy3 + 32*sc);
+    line(cx3 - 28*sc, cy3 + 32*sc, cx3 - 39*sc, cy3 + 32*sc);
+    line(cx3 - 39*sc, cy3 + 32*sc, cx3 - 39*sc, cy3);
+    line(cx3 - 39*sc, cy3 + 16*sc, cx3 - 7*sc, cy3 + 16*sc);
+    line(cx3 - 23*sc, cy3 + 24*sc, cx3 - 7*sc, cy3 + 24*sc);
+  }
+
+  // ---------------------------------------------------------
+  // STEP 11: BRASSES (Side Profile)
+  // ---------------------------------------------------------
+  if (s >= 11) {
+    float bx2 = cx2 + 50;
+    stroke(sCol[11]); strokeWeight(sw);
+    
+    arc(bx2, cyBr, brR1*2, brR1*2, PI, TWO_PI);
+    strokeWeight(1.5);
+    drawDashedArc(bx2, cyBr, 22*sc*2, 22*sc*2, PI, TWO_PI);
+    drawDashedArc(bx2, cyBr, brR2*2, brR2*2, PI, TWO_PI);
+    strokeWeight(sw);
+    arc(bx2, cyBr, brR3*2, brR3*2, PI, TWO_PI);
+    line(bx2 - brR3, cyBr, bx2 - brR1, cyBr); line(bx2 + brR3, cyBr, bx2 + brR1, cyBr);
+
+    // Side View (Brasses Full Right & Internal Dashed)
+    // Right Half External Top
+    line(cx3 + 23*sc, cy3 - 24*sc, cx3 + 28*sc, cy3 - 24*sc); 
+    line(cx3 + 28*sc, cy3 - 24*sc, cx3 + 28*sc, cy3 - 32*sc); 
+    line(cx3 + 28*sc, cy3 - 32*sc, cx3 + 39*sc, cy3 - 32*sc); 
+    line(cx3 + 39*sc, cy3 - 32*sc, cx3 + 39*sc, cy3);
+    // Right Half External Bottom
+    line(cx3 + 23*sc, cy3 + 24*sc, cx3 + 28*sc, cy3 + 24*sc); 
+    line(cx3 + 28*sc, cy3 + 24*sc, cx3 + 28*sc, cy3 + 32*sc); 
+    line(cx3 + 28*sc, cy3 + 32*sc, cx3 + 39*sc, cy3 + 32*sc); 
+    line(cx3 + 39*sc, cy3 + 32*sc, cx3 + 39*sc, cy3);
+    // Hidden internal lines (Right)
+    strokeWeight(1.5);
+    drawDashedLine(cx3, cy3 - 16*sc, cx3 + 39*sc, cy3 - 16*sc); // Bore top
+    drawDashedLine(cx3, cy3 - 24*sc, cx3 + 23*sc, cy3 - 24*sc); // Body top
+    drawDashedLine(cx3, cy3 + 16*sc, cx3 + 39*sc, cy3 + 16*sc); // Bore bot
+    drawDashedLine(cx3, cy3 + 24*sc, cx3 + 23*sc, cy3 + 24*sc); // Body bot
+    // Split lines visible inside bolt hole
+    line(cx3 - 7*sc, cy3, cx3, cy3); 
+    drawDashedLine(cx3, cy3, cx3 + 7*sc, cy3); 
+  }
+
+  // ---------------------------------------------------------
+  // STEP 12: SQUARE HEAD BOLT
+  // ---------------------------------------------------------
+  if (s >= 12) {
+    stroke(sCol[12]); strokeWeight(sw);
+    float bx = cx2 - boL/2; 
+    
+    // Shaft
+    line(bx, cyBo - boD/2, bx + boL, cyBo - boD/2);
+    line(bx, cyBo + boD/2, bx + boL, cyBo + boD/2);
+    arc(bx, cyBo, boD, boD, HALF_PI, PI+HALF_PI);               
+    // Square Head
+    rect(bx + boL, cyBo - boHdW/2, boHdH, boHdW);
+    
+    // Side view of head in Parts column
+    float hx = cx2 + boL/2 + 40*sc;
+    rect(hx - boHdW/2, cyBo - boHdW/2, boHdW, boHdW);
+    ellipse(hx, cyBo, boD, boD);                                
+
+    // Side View (Bolt inserted - Solid Left, Dashed Right)
+    // Solid Left Half
+    line(cx3 - 6*sc, baseBot - 8*sc, cx3 - 6*sc, capTop - 25*sc);
+    line(cx3 - 12*sc, baseBot, cx3 - 12*sc, baseBot - 8*sc);
+    line(cx3 - 12*sc, baseBot - 8*sc, cx3, baseBot - 8*sc);
+    line(cx3 - 12*sc, baseBot, cx3, baseBot);
+    // Dashed Right Half (Internal)
+    strokeWeight(1.5);
+    drawDashedLine(cx3 + 6*sc, baseBot - 8*sc, cx3 + 6*sc, capTop);
+    drawDashedLine(cx3 + 12*sc, baseBot, cx3 + 12*sc, baseBot - 8*sc);
+    drawDashedLine(cx3, baseBot - 8*sc, cx3 + 12*sc, baseBot - 8*sc);
+    drawDashedLine(cx3, baseBot, cx3 + 12*sc, baseBot);
+    // Exposed solid bolt right half (above cap)
+    strokeWeight(sw);
+    line(cx3 + 6*sc, capTop, cx3 + 6*sc, capTop - 25*sc);
+    line(cx3 - 6*sc, capTop - 25*sc, cx3 + 6*sc, capTop - 25*sc); // Bolt top edge
+  }
+
+  // ---------------------------------------------------------
+  // STEP 13: HEX NUTS & LOCK NUTS
+  // ---------------------------------------------------------
+  if (s >= 13) {
+    stroke(sCol[13]); strokeWeight(sw);
+    
+    // MAIN NUT (Parts View)
+    float nx1 = cx2 - 60*sc;
+    drawHexagon(nx1, cyNu, nutW/2);                             
+    ellipse(nx1, cyNu, nutD, nutD);                             
+    float ns1 = cx2 - 20*sc;
+    rect(ns1 - nutH1/2, cyNu - nutW/2, nutH1, nutW);            
+    line(ns1 - nutH1/2, cyNu - nutW/4, ns1 + nutH1/2, cyNu - nutW/4); 
+    line(ns1 - nutH1/2, cyNu + nutW/4, ns1 + nutH1/2, cyNu + nutW/4);
+    
+    // LOCK NUT (Parts View)
+    float nx2 = cx2 + 30*sc;
+    drawHexagon(nx2, cyNu, nutW/2);
+    ellipse(nx2, cyNu, nutD, nutD);
+    float ns2 = cx2 + 70*sc;
+    rect(ns2 - nutH2/2, cyNu - nutW/2, nutH2, nutW);
+    line(ns2 - nutH2/2, cyNu - nutW/4, ns2 + nutH2/2, cyNu - nutW/4);
+    line(ns2 - nutH2/2, cyNu + nutW/4, ns2 + nutH2/2, cyNu + nutW/4);
+
+    // Side View (Nuts Attached - Full solid overlay)
+    fill(245, 248, 250); // Obscure bolt behind nuts
+    // Main Nut
+    rect(cx3 - 12*sc, capTop - 12*sc, 24*sc, 12*sc);
+    line(cx3 - 6*sc, capTop, cx3 - 6*sc, capTop - 12*sc);
+    line(cx3 + 6*sc, capTop, cx3 + 6*sc, capTop - 12*sc);
+    // Lock Nut
+    rect(cx3 - 12*sc, capTop - 20*sc, 24*sc, 8*sc);
+    line(cx3 - 6*sc, capTop - 12*sc, cx3 - 6*sc, capTop - 20*sc);
+    line(cx3 + 6*sc, capTop - 12*sc, cx3 + 6*sc, capTop - 20*sc);
+    noFill();
+  }
+
+  popStyle();
+}
+
+// =========================================================
+// UI, PROJECTIONS & HELPERS
+// =========================================================
+
+void drawLinearDim(float x1, float y1, float x2, float y2, String txt, boolean isVertical, float extOffset) {
+  stroke(50); fill(50); textAlign(CENTER, BOTTOM); textSize(12);
+  line(x1, y1, x2, y2); 
+  pushMatrix(); translate(x1, y1); rotate(atan2(y2-y1, x2-x1)); triangle(0, 0, 8, -2, 8, 2); popMatrix();
+  pushMatrix(); translate(x2, y2); rotate(atan2(y1-y2, x1-x2)); triangle(0, 0, 8, -2, 8, 2); popMatrix();
+  
+  if (isVertical) {
+    pushMatrix(); translate(x1 - 6, (y1+y2)/2); rotate(-HALF_PI); text(txt, 0, 0); popMatrix();
+    line(x1, y1, x1 - 10, y1); line(x2, y2, x2 - 10, y2);
+  } else {
+    text(txt, (x1+x2)/2, y1 - 3);
+    float dir1 = 10; float dir2 = 10;
+    line(x1, y1, x1, y1 + dir1); line(x2, y2, x2, y2 + dir2);
+  }
+}
+
+void drawUI() {
+  fill(30); noStroke(); rect(0, 0, width, 80);
+  fill(255); textSize(20); textAlign(LEFT, CENTER);
+  text("INTERACTIVE DRAFTING: PLUMMER BLOCK (FULL ASSEMBLY)", 20, 25);
+  fill(0, 200, 255); textSize(16);
+  text("TAP screen to advance to the next step.", 20, 55);
+  
+  fill(255, 255, 255, 240); stroke(200); strokeWeight(2);
+  rect(20, height - 70, width - 40, 50, 10);
+  fill(sCol[step]); textSize(16);
+  text(instructions[step], 40, height - 45);
+  
+  fill(0, 120); textSize(18); textAlign(CENTER, CENTER);
+  text("FRONT VIEW", cx, cyF - 100);
+  text("TOP VIEW", cx, cyT + 120);
+  text("BRASSES", cx2, cyBr - 80);
+  text("M12 BOLT", cx2, cyBo - 60);
+  text("M12 NUTS", cx2, cyNu - 60);
+  text("L.H SECTIONAL SIDE VIEW", cx3, cyF - 100);
+}
+
+void drawChainLine(float x1, float y1, float x2, float y2) {
+  float d = dist(x1, y1, x2, y2); float angle = atan2(y2-y1, x2-x1);
+  pushMatrix(); translate(x1, y1); rotate(angle); float pos = 0;
+  while(pos < d) {
+    float len = min(20, d - pos); line(pos, 0, pos + len, 0); pos += len + 4;
+    if (pos < d) { line(pos, 0, pos + 2, 0); pos += 6; }
+  }
+  popMatrix();
+}
+
+void drawDashedLine(float x1, float y1, float x2, float y2) {
+  float d = dist(x1, y1, x2, y2); int dashes = max(1, int(d / 6));
+  float dx = (x2 - x1) / dashes; float dy = (y2 - y1) / dashes;
+  for (int i = 0; i < dashes; i += 2) line(x1 + dx * i, y1 + dy * i, x1 + dx * (i + 1), y1 + dy * (i + 1));
+}
+
+void drawDashedArc(float x, float y, float w, float h, float start, float stop) {
+  float circ = w * PI * ((stop - start)/TWO_PI); int dashes = int(circ / 8); float aStep = (stop - start) / dashes;
+  for(int i = 0; i < dashes; i+=2) arc(x, y, w, h, start + i*aStep, start + (i+1)*aStep);
+}
+
+void drawHexagon(float hx, float hy, float radius) {
+  beginShape();
+  for(int i = 0; i < 6; i++) {
+    float angle = TWO_PI / 6 * i + HALF_PI; 
+    vertex(hx + cos(angle) * radius, hy + sin(angle) * radius);
+  }
+  endShape(CLOSE);
+}
+
+void mousePressed() {
+  if (step < maxSteps) step++; else step = 0;
+}
