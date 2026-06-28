@@ -1,0 +1,401 @@
+// =========================================================
+// INTERACTIVE X-RAY SCREW JACK ASSEMBLY
+// Drag mouse to use X-Ray. Click to advance steps.
+// =========================================================
+
+int step = 0;
+int maxSteps = 9;
+float S = 1.35; // Scale factor to fit screen
+
+// Interactive Patch
+float patchX, patchY;
+float patchW = 380, patchH = 380;
+
+// ----- Dimensions (Scaled for drawing) -----
+// Base & Body
+float bW = 140 * S, bH = 20 * S;
+float bodyH = 185 * S;
+float taperBase = 100 * S, bossW = 70 * S, bossH = 40 * S;
+
+// Nut
+float nutFlW = 65 * S, nutFlH = 10 * S;
+float nutBdW = 50 * S, nutBdH = 45 * S;
+
+// Spindle
+float spinW = 38 * S, spinH = 180 * S;
+float headW = 65 * S, headH = 45 * S;
+float pinW = 22 * S, pinH = 25 * S;
+
+// Cup & Extras
+float cupTopW = 65 * S, cupBaseW = 45 * S, cupH = 45 * S;
+float cupRecW = 36 * S, cupRecH = 10 * S;
+float tommyW = 275 * S, tommyD = 12 * S;
+
+// Y-Coordinates
+float cx, yGround;
+float yBossTop, yNutTop;
+float ySpinBase, ySpinHeadTop, yPinTop, yCupTop;
+
+void setup() {
+  size(1100, 750);
+  textAlign(LEFT, CENTER);
+  
+  patchX = width / 2;
+  patchY = height / 2;
+  
+  cx = width / 2;
+  yGround = height - 80;
+  
+  // Calculate absolute Y heights
+  yBossTop = yGround - bodyH;
+  yNutTop = yBossTop - nutFlH;
+  
+  // Raise spindle to show it extended
+  float raiseAmt = 55 * S;
+  ySpinBase = yGround - 15 * S - raiseAmt; 
+  ySpinHeadTop = ySpinBase - spinH - headH;
+  yPinTop = ySpinHeadTop - pinH;
+  yCupTop = ySpinHeadTop - cupH;
+}
+
+void draw() {
+  background(245, 248, 250); // Light blueprint paper
+  
+  // Smoothly track mouse for the X-Ray Scanner
+  patchX = lerp(patchX, mouseX, 0.2);
+  patchY = lerp(patchY, mouseY, 0.2);
+
+  // 1. DRAW BASE LAYER (Normal solid assembly view)
+  drawModel(step, false);
+
+  // 2. CREATE X-RAY CLIP MASK
+  pushMatrix();
+  clip(patchX - patchW/2, patchY - patchH/2, patchW, patchH);
+  
+  // 3. DRAW X-RAY LAYER (Hatching & Solid internals)
+  fill(255); noStroke(); 
+  rect(patchX - patchW/2, patchY - patchH/2, patchW, patchH); // Clear patch background
+  
+  // Hatching goes underneath the outlines
+  drawHatching(step, true);
+  
+  // Draw outlines and opaque components over hatching
+  drawModel(step, true);
+  
+  noClip();
+  popMatrix();
+  
+  // 4. DRAW DIMENSIONS & UI
+  drawDimensions(step);
+  drawScannerBorder();
+  drawUI();
+}
+
+// =========================================================
+// UNIFIED DRAFTING FUNCTION (Handles Base and X-Ray Views)
+// =========================================================
+void drawModel(int s, boolean isXRay) {
+  float sw = isXRay ? 2.5 : 1.5;         
+  color sc = isXRay ? color(0) : color(60); 
+  
+  // In normal view we use opaque fill to hide background parts.
+  // In X-Ray we use transparent fill so the hatching shows through the bodies.
+  color fillC = isXRay ? color(255, 0) : color(245, 248, 250);
+  color solidFill = isXRay ? color(255) : color(245, 248, 250);
+
+  // STEP 0: Centerlines
+  if (s >= 0) {
+    stroke(isXRay ? color(200, 0, 0) : color(100)); strokeWeight(1);
+    drawChainLine(cx, yCupTop - 60, cx, yGround + 40);       
+    drawChainLine(cx - 200, yGround, cx + 200, yGround); 
+  }
+
+  // STEP 1: Body (Cast Iron)
+  if (s >= 1) {
+    fill(fillC); stroke(sc); strokeWeight(sw);
+    beginShape();
+    vertex(cx - bW/2, yGround);
+    vertex(cx - bW/2, yGround - bH);
+    vertex(cx - taperBase/2, yGround - bH);
+    vertex(cx - bossW/2, yBossTop + bossH);
+    vertex(cx - bossW/2, yBossTop);
+    vertex(cx + bossW/2, yBossTop);
+    vertex(cx + bossW/2, yBossTop + bossH);
+    vertex(cx + taperBase/2, yGround - bH);
+    vertex(cx + bW/2, yGround - bH);
+    vertex(cx + bW/2, yGround);
+    endShape(CLOSE);
+    
+    // Bottom clearance recess
+    line(cx - 40*S, yGround, cx - 40*S, yGround - 3*S);
+    line(cx + 40*S, yGround, cx + 40*S, yGround - 3*S);
+    line(cx - 40*S, yGround - 3*S, cx + 40*S, yGround - 3*S);
+
+    if (!isXRay) {
+      strokeWeight(1.5);
+      drawDashedLine(cx - nutBdW/2, yBossTop, cx - nutBdW/2, yBossTop + nutBdH);
+      drawDashedLine(cx + nutBdW/2, yBossTop, cx + nutBdW/2, yBossTop + nutBdH);
+      drawDashedLine(cx - nutBdW/2, yBossTop + nutBdH, cx + nutBdW/2, yBossTop + nutBdH);
+    } else if (s < 7) {
+      line(cx - nutBdW/2, yBossTop, cx - nutBdW/2, yBossTop + nutBdH);
+      line(cx + nutBdW/2, yBossTop, cx + nutBdW/2, yBossTop + nutBdH);
+    }
+  }
+
+  // STEP 2: Nut (Gun Metal)
+  if (s >= 2) {
+    fill(fillC); stroke(sc); strokeWeight(sw);
+    rect(cx - nutFlW/2, yNutTop, nutFlW, nutFlH); // Flange
+    
+    if (!isXRay) {
+      drawDashedLine(cx - spinW/2, yNutTop, cx - spinW/2, yBossTop + nutBdH);
+      drawDashedLine(cx + spinW/2, yNutTop, cx + spinW/2, yBossTop + nutBdH);
+    } else if (s < 8) {
+      rect(cx - nutBdW/2, yBossTop, nutBdW, nutBdH);
+    }
+  }
+
+  // STEP 3: Spindle (Steel)
+  if (s >= 3) {
+    fill(solidFill); stroke(sc); strokeWeight(sw);
+    
+    // In normal view, hide the section of the spindle inside the body
+    if (!isXRay) clip(0, 0, width, yNutTop);
+    
+    rect(cx - spinW/2, ySpinBase, spinW, spinH);        // Main Thread Shaft
+    rect(cx - headW/2, ySpinHeadTop, headW, headH);     // Head
+    rect(cx - pinW/2, yPinTop, pinW, pinH);             // Top Pin
+    
+    // Spindle Thread Detail (simplified visual)
+    strokeWeight(1);
+    for(float ty = ySpinBase + 4*S; ty < ySpinHeadTop - 4*S; ty += 8*S) {
+       line(cx - spinW/2, ty, cx + spinW/2, ty + 2*S);
+       line(cx - spinW/2, ty + 4*S, cx + spinW/2, ty + 6*S);
+    }
+    strokeWeight(sw);
+    
+    if (!isXRay) noClip();
+  }
+
+  // STEP 4: Cup (Cast Steel)
+  if (s >= 4) {
+    fill(fillC); stroke(sc); strokeWeight(sw);
+    beginShape();
+    vertex(cx - cupBaseW/2, ySpinHeadTop);
+    vertex(cx - cupTopW/2, yCupTop);
+    vertex(cx + cupTopW/2, yCupTop);
+    vertex(cx + cupBaseW/2, ySpinHeadTop);
+    endShape(CLOSE);
+    
+    if (isXRay && s >= 9) {
+       rect(cx - cupRecW/2, yCupTop, cupRecW, cupRecH);
+       line(cx - pinW/2, yCupTop + cupRecH, cx - pinW/2, ySpinHeadTop);
+       line(cx + pinW/2, yCupTop + cupRecH, cx + pinW/2, ySpinHeadTop);
+    } else if (!isXRay) {
+       drawDashedLine(cx - cupRecW/2, yCupTop, cx - cupRecW/2, yCupTop + cupRecH);
+       drawDashedLine(cx + cupRecW/2, yCupTop, cx + cupRecW/2, yCupTop + cupRecH);
+    }
+  }
+
+  // STEP 5: Washer & CSK Screw
+  if (s >= 5) {
+    fill(solidFill); stroke(sc); strokeWeight(sw);
+    rect(cx - 35*S/2, yPinTop - 8*S, 35*S, 8*S); // Washer
+    
+    if (isXRay) {
+        rect(cx - 10*S/2, yPinTop, 10*S, 18*S); // Shank
+    } else {
+        drawDashedLine(cx - 10*S/2, yPinTop, cx - 10*S/2, yPinTop + 18*S);
+        drawDashedLine(cx + 10*S/2, yPinTop, cx + 10*S/2, yPinTop + 18*S);
+    }
+    // CSK Head
+    quad(cx - 10*S/2, yPinTop - 8*S, cx + 10*S/2, yPinTop - 8*S, 
+         cx + 20*S/2, yPinTop - 15*S, cx - 20*S/2, yPinTop - 15*S);
+  }
+
+  // STEP 6: Tommy Bar
+  if (s >= 6) {
+    fill(solidFill); stroke(sc); strokeWeight(sw);
+    float tY = ySpinHeadTop + headH/2;
+    rect(cx - 20*S, tY - tommyD/2, tommyW, tommyD, 6);
+    line(cx - 10*S, tY - tommyD/2, cx - 10*S, tY + tommyD/2); // Insert line
+  }
+}
+
+// =========================================================
+// SECTION HATCHING LOGIC (For X-Ray Mode)
+// =========================================================
+void drawHatching(int s, boolean isXRay) {
+  if (!isXRay) return;
+  
+  float anim = (frameCount % 32) / 4.0;  
+  color ciHatch = color(110, 130, 150);
+  color gmHatch = color(180, 150, 50);
+  color csHatch = color(100, 100, 120);
+
+  // 1. Cast Iron Body Hatching
+  if (s >= 7) {
+    hatchArea(cx - bW/2, yBossTop, bW, bodyH, 1, ciHatch, anim);
+    
+    // Mask out negative spaces with solid white
+    fill(255); noStroke();
+    
+    // Left outer masking
+    beginShape(); vertex(0, 0); vertex(cx - bossW/2, 0); vertex(cx - bossW/2, yBossTop + bossH); 
+    vertex(cx - taperBase/2, yGround - bH); vertex(cx - bW/2, yGround - bH); 
+    vertex(0, yGround - bH); vertex(0, 0); endShape(CLOSE);
+    
+    // Right outer masking
+    beginShape(); vertex(width, 0); vertex(cx + bossW/2, 0); vertex(cx + bossW/2, yBossTop + bossH); 
+    vertex(cx + taperBase/2, yGround - bH); vertex(cx + bW/2, yGround - bH); 
+    vertex(width, yGround - bH); vertex(width, 0); endShape(CLOSE);
+    
+    rect(0, 0, width, yBossTop);                      // Top clear
+    rect(0, yGround, width, height - yGround);        // Bottom clear
+    rect(cx - 50*S, yGround - 3*S, 100*S, 4*S);       // Recess clear
+    
+    // Clear internal bores
+    rect(cx - nutBdW/2, yBossTop - 2, nutBdW, nutBdH + 2);
+    rect(cx - (spinW + 4*S)/2, yBossTop + nutBdH, spinW + 4*S, bodyH - nutBdH - 25*S);
+  }
+  
+  // 2. Gun Metal Nut Hatching
+  if (s >= 8) {
+    hatchArea(cx - nutFlW/2, yNutTop, nutFlW, nutFlH + nutBdH, -1, gmHatch, anim);
+    fill(255); noStroke();
+    
+    // Blank corners outside the nut body
+    rect(cx - nutFlW/2 - 2, yBossTop, (nutFlW - nutBdW)/2 + 2, nutBdH + 2);
+    rect(cx + nutBdW/2, yBossTop, (nutFlW - nutBdW)/2 + 2, nutBdH + 2);
+    
+    // Clear inner threaded bore
+    rect(cx - spinW/2, yNutTop - 2, spinW, nutFlH + nutBdH + 4);
+  }
+  
+  // 3. Cast Steel Cup Hatching
+  if (s >= 9) {
+    hatchArea(cx - cupTopW/2, yCupTop, cupTopW, cupH, 1, csHatch, anim);
+    fill(255); noStroke();
+    
+    // Mask out left and right tapers
+    quad(0, yCupTop, cx - cupTopW/2, yCupTop, cx - cupBaseW/2, ySpinHeadTop, 0, ySpinHeadTop);
+    quad(width, yCupTop, cx + cupTopW/2, yCupTop, cx + cupBaseW/2, ySpinHeadTop, width, ySpinHeadTop);
+    
+    // Clear internal recesses
+    rect(cx - cupRecW/2, yCupTop - 2, cupRecW, cupRecH + 2);
+    rect(cx - pinW/2, yCupTop + cupRecH, pinW, cupH - cupRecH);
+  }
+}
+
+// =========================================================
+// DIMENSIONS AND UI OVERLAYS
+// =========================================================
+void drawDimensions(int s) {
+  stroke(0, 130, 0); fill(0, 130, 0); textSize(14);
+  
+  if (s >= 1) {
+    drawDim(cx - bW/2, yGround + 25, cx + bW/2, yGround + 25, "Ø140", false, 15);
+    drawDim(cx - bW/2 - 30, yBossTop, cx - bW/2 - 30, yGround, "185", true, -15);
+  }
+  if (s >= 2) {
+    drawDimLineOnly(cx + bossW/2, yNutTop + nutFlH/2, cx + bossW/2 + 60, yNutTop - 20, "NUT (GM)");
+  }
+  if (s >= 3) {
+    drawDimLineOnly(cx + spinW/2, ySpinBase + spinH/2, cx + spinW/2 + 50, ySpinBase + spinH/2 - 30, "SQ. THD Ø38");
+  }
+  if (s >= 4) {
+    drawDim(cx - cupTopW/2, yCupTop - 20, cx + cupTopW/2, yCupTop - 20, "Ø65", false, -15);
+  }
+  if (s >= 6) {
+    drawDimLineOnly(cx + tommyW/2, ySpinHeadTop + headH/2, cx + tommyW/2 + 30, ySpinHeadTop + headH/2 - 30, "TOMMY BAR");
+  }
+}
+
+void drawScannerBorder() {
+  fill(0, 150, 255, 10); stroke(0, 150, 255, 200); strokeWeight(4);
+  rect(patchX - patchW/2, patchY - patchH/2, patchW, patchH, 15);
+  
+  strokeWeight(8); float c = 30;
+  float px = patchX - patchW/2; float py = patchY - patchH/2;
+  line(px, py+c, px, py); line(px, py, px+c, py);
+  line(px+patchW, py+c, px+patchW, py); line(px+patchW, py, px+patchW-c, py);
+  line(px, py+patchH-c, px, py+patchH); line(px, py+patchH, px+c, py+patchH);
+  line(px+patchW, py+patchH-c, px+patchW, py+patchH); line(px+patchW, py+patchH, px+patchW-c, py+patchH);
+}
+
+void drawUI() {
+  fill(30); noStroke(); rect(0, 0, width, 80);
+  fill(255); textSize(20);
+  text("INTERACTIVE X-RAY DRAFTING: SCREW JACK", 20, 25);
+  fill(0, 200, 255); textSize(16);
+  text("DRAG to use X-Ray Scanner. TAP/CLICK screen to advance steps.", 20, 55);
+  
+  fill(255, 255, 255, 230); stroke(200); strokeWeight(2);
+  rect(20, height - 70, width - 40, 50, 10);
+  fill(0); textSize(18);
+  String[] inst = {
+    "Step 0: Lay out Main Axis and Ground Centerlines.",
+    "Step 1: Draw the Cast Iron Main Body (Base Ø140, Height 185).",
+    "Step 2: Insert the Gun Metal Nut into the body boss.",
+    "Step 3: Insert the Steel Screw Spindle (Ø38 Square Thread).",
+    "Step 4: Place the Cast Steel Cup onto the Spindle Head.",
+    "Step 5: Secure the Cup with Special Washer and CSK Screw.",
+    "Step 6: Insert the Tommy Bar (Length 275, Ø12).",
+    "Step 7: [X-RAY] Section the Cast Iron Body (Hatching).",
+    "Step 8: [X-RAY] Section the Gun Metal Nut.",
+    "Step 9: [X-RAY] Section the Cast Steel Cup and final details."
+  };
+  text(inst[step], 40, height - 45);
+}
+
+// =========================================================
+// UTILITY DRAWING FUNCTIONS
+// =========================================================
+void drawChainLine(float x1, float y1, float x2, float y2) {
+  float d = dist(x1, y1, x2, y2); float angle = atan2(y2-y1, x2-x1);
+  pushMatrix(); translate(x1, y1); rotate(angle); float pos = 0;
+  while(pos < d) {
+    float len = min(20, d - pos); line(pos, 0, pos + len, 0); pos += len + 5;
+    if (pos < d) { line(pos, 0, pos + 2, 0); pos += 7; }
+  }
+  popMatrix();
+}
+
+void drawDashedLine(float x1, float y1, float x2, float y2) {
+  float d = dist(x1, y1, x2, y2); int dashes = max(1, int(d / 8));
+  float dx = (x2 - x1) / dashes; float dy = (y2 - y1) / dashes;
+  for (int i = 0; i < dashes; i += 2) line(x1 + dx*i, y1 + dy*i, x1 + dx*(i+1), y1 + dy*(i+1));
+}
+
+void hatchArea(float x, float y, float w, float h, int dir, color c, float offset) {
+  pushStyle(); stroke(c); strokeWeight(2); clip(x, y, w, h);
+  for(float i = -w - h; i < w + h; i += 8) {
+    float o = i + (dir > 0 ? offset : -offset);
+    if(dir > 0) line(x + o, y, x + o + h, y + h); else line(x + o, y + h, x + o + h, y);
+  }
+  noClip(); popStyle();
+}
+
+void drawDim(float x1, float y1, float x2, float y2, String txt, boolean isVert, float offset) {
+  strokeWeight(1);
+  if(isVert) { line(x1+10, y1, x1-10, y1); line(x2+10, y2, x2-10, y2); } 
+  else { line(x1, y1+10, x1, y1-10); line(x2, y2+10, x2, y2-10); }
+  strokeWeight(1.5); line(x1, y1, x2, y2);
+  
+  pushMatrix(); translate(x1, y1); rotate(atan2(y2-y1, x2-x1)); line(0,0, 8, 4); line(0,0, 8, -4); popMatrix();
+  pushMatrix(); translate(x2, y2); rotate(atan2(y1-y2, x1-x2)); line(0,0, 8, 4); line(0,0, 8, -4); popMatrix();
+  
+  noStroke();
+  if (isVert) text(txt, x1 + offset, (y1+y2)/2);
+  else { textAlign(CENTER, BOTTOM); text(txt, (x1+x2)/2, y1 + offset); textAlign(LEFT, CENTER); }
+}
+
+void drawDimLineOnly(float cx, float cy, float ex, float ey, String txt) {
+  strokeWeight(1.5); line(cx, cy, ex, ey);
+  pushMatrix(); translate(ex, ey); rotate(atan2(cy-ey, cx-ex)); line(0,0, 8, 4); line(0,0, 8, -4); popMatrix();
+  noStroke(); text(txt, ex + 5, ey + (ey>cy ? 10 : -10));
+}
+
+void mousePressed() {
+  if (step < maxSteps) step++; else step = 0;
+}
